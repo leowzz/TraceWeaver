@@ -43,7 +43,14 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    items: list["Item"] = Relationship(
+        back_populates="owner",
+        cascade_delete=True,
+        sa_relationship_kwargs={
+            "primaryjoin": "Item.owner_id==User.id",
+            "foreign_keys": "[Item.owner_id]",
+        },
+    )
 
 
 # Properties to return via API, id is always required
@@ -75,10 +82,14 @@ class ItemUpdate(ItemBase):
 # Database model, database table inferred from class name
 class Item(ItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(
-        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    owner_id: uuid.UUID = Field(index=True, nullable=False)
+    owner: User | None = Relationship(
+        back_populates="items",
+        sa_relationship_kwargs={
+            "primaryjoin": "Item.owner_id==User.id",
+            "foreign_keys": "[Item.owner_id]",
+        },
     )
-    owner: User | None = Relationship(back_populates="items")
 
 
 # Properties to return via API, id is always required

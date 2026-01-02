@@ -1,233 +1,275 @@
-# Full Stack FastAPI Template
+# TraceWeaver
 
-<a href="https://github.com/fastapi/full-stack-fastapi-template/actions?query=workflow%3A%22Test+Docker+Compose%22" target="_blank"><img src="https://github.com/fastapi/full-stack-fastapi-template/workflows/Test%20Docker%20Compose/badge.svg" alt="Test Docker Compose"></a>
-<a href="https://github.com/fastapi/full-stack-fastapi-template/actions?query=workflow%3A%22Test+Backend%22" target="_blank"><img src="https://github.com/fastapi/full-stack-fastapi-template/workflows/Test%20Backend/badge.svg" alt="Test Backend"></a>
-<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/fastapi/full-stack-fastapi-template" target="_blank"><img src="https://coverage-badge.samuelcolvin.workers.dev/fastapi/full-stack-fastapi-template.svg" alt="Coverage"></a>
+> 自动化的工作痕迹编织平台 - 将碎片化的元数据转化为高价值的结构化报告
 
-## Technology Stack and Features
+## 项目愿景
 
-- ⚡ [**FastAPI**](https://fastapi.tiangolo.com) for the Python backend API.
-  - 🧰 [SQLModel](https://sqlmodel.tiangolo.com) for the Python SQL database interactions (ORM).
-  - 🔍 [Pydantic](https://docs.pydantic.dev), used by FastAPI, for the data validation and settings management.
-  - 💾 [PostgreSQL](https://www.postgresql.org) as the SQL database.
-- 🚀 [React](https://react.dev) for the frontend.
-  - 💃 Using TypeScript, hooks, [Vite](https://vitejs.dev), and other parts of a modern frontend stack.
-  - 🎨 [Tailwind CSS](https://tailwindcss.com) and [shadcn/ui](https://ui.shadcn.com) for the frontend components.
-  - 🤖 An automatically generated frontend client.
-  - 🧪 [Playwright](https://playwright.dev) for End-to-End testing.
-  - 🦇 Dark mode support.
-- 🐋 [Docker Compose](https://www.docker.com) for development and production.
-- 🔒 Secure password hashing by default.
-- 🔑 JWT (JSON Web Token) authentication.
-- 📫 Email based password recovery.
-- 📬 [Mailcatcher](https://mailcatcher.me) for local email testing during development.
-- ✅ Tests with [Pytest](https://pytest.org).
-- 📞 [Traefik](https://traefik.io) as a reverse proxy / load balancer.
-- 🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
-- 🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+**TraceWeaver** 是一个自动化的工作痕迹编织平台，旨在解放开发者的总结时间，通过 AI 将碎片化的元数据转化为高价值的结构化报告。
 
-### Dashboard Login
+### 核心理念：Trace as a Stream（痕迹即流）
 
-[![API docs](img/login.png)](https://github.com/fastapi/full-stack-fastapi-template)
+无论数据来自代码提交、时间记录软件还是笔记工具，都应被标准化为统一的"活动事件 (Activity Event)"。这种统一抽象使得系统能够灵活接入各种数据源，同时保持核心业务逻辑的简洁和可维护。
 
-### Dashboard - Admin
+## 核心特性
 
-[![API docs](img/dashboard.png)](https://github.com/fastapi/full-stack-fastapi-template)
+- 🔌 **多数据源支持**：通过适配器模式支持 Git、Dayflow、SiYuan 等多种数据源
+- 🎯 **统一数据模型**：所有数据源统一转换为标准化的活动事件
+- 🤖 **AI 智能总结**：基于 LLM 自动生成工作日报和周报
+- 📊 **可视化时间线**：直观展示一天的活动流
+- ✏️ **可编辑报告**：支持手动修正和优化 AI 生成的内容
+- 🔒 **安全可靠**：JWT 认证、密码加密、数据隔离
+- 🚀 **现代化技术栈**：FastAPI + React + TypeScript + PostgreSQL
 
-### Dashboard - Items
+## 技术栈
 
-[![API docs](img/dashboard-items.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### 后端
+- **FastAPI** - 高性能 Python Web 框架
+- **SQLModel** - 基于 Pydantic 和 SQLAlchemy 的 ORM
+- **PostgreSQL** - 关系型数据库
+- **Alembic** - 数据库迁移工具
+- **Pydantic v2** - 数据验证和设置管理
 
-### Dashboard - Dark Mode
+### 前端
+- **React** - UI 框架
+- **TypeScript** - 类型安全
+- **Vite** - 构建工具
+- **TanStack Router** - 路由管理
+- **TanStack Query** - 数据获取和状态管理
+- **Tailwind CSS** - 样式框架
+- **shadcn/ui** - UI 组件库
 
-[![API docs](img/dashboard-dark.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### 基础设施
+- **Docker Compose** - 容器编排
+- **Traefik** - 反向代理和负载均衡
+- **Playwright** - 端到端测试
 
-### Interactive API Documentation
+## 快速开始
 
-[![API docs](img/docs.png)](https://github.com/fastapi/full-stack-fastapi-template)
+### 前置要求
 
-## How To Use It
+- [Docker](https://www.docker.com/) 和 Docker Compose
+- [uv](https://docs.astral.sh/uv/) (Python 包管理工具，可选)
 
-You can **just fork or clone** this repository and use it as is.
+### 启动项目
 
-✨ It just works. ✨
-
-### How to Use a Private Repository
-
-If you want to have a private repository, GitHub won't allow you to simply fork it as it doesn't allow changing the visibility of forks.
-
-But you can do the following:
-
-- Create a new GitHub repo, for example `my-full-stack`.
-- Clone this repository manually, set the name with the name of the project you want to use, for example `my-full-stack`:
+1. **克隆仓库**
 
 ```bash
-git clone git@github.com:fastapi/full-stack-fastapi-template.git my-full-stack
+git clone <repository-url>
+cd TraceWeaver
 ```
 
-- Enter into the new directory:
+2. **配置环境变量**
+
+复制 `.env.example` 为 `.env` 并配置必要的环境变量（如果存在）。
+
+3. **启动 Docker Compose 服务**
 
 ```bash
-cd my-full-stack
+docker compose watch
 ```
 
-- Set the new origin to your new repository, copy it from the GitHub interface, for example:
+4. **访问应用**
+
+- 前端界面: http://localhost:5173
+- 后端 API: http://localhost:8000
+- API 文档 (Swagger): http://localhost:8000/docs
+- 数据库管理 (Adminer): http://localhost:8080
+
+### 本地开发
+
+详细的开发指南请参考 [开发文档](development.md)。
+
+## 系统架构
+
+TraceWeaver 采用 **Hexagonal Architecture（六边形架构/端口适配器模式）**，核心业务逻辑与外部系统完全解耦。
+
+```mermaid
+graph TD
+    subgraph Frontend["前端 (React)"]
+        UI["Web Dashboard"]
+        Config["Source Configuration"]
+        Editor["Report Editor"]
+    end
+
+    subgraph Backend["后端 (FastAPI)"]
+        API["API Layer (Routes)"]
+        
+        subgraph Core["核心业务层"]
+            Manager["Activity Manager"]
+            AI_Engine["LLM Summarizer"]
+        end
+        
+        subgraph Adapter["适配器层 (解耦核心)"]
+            Interface["&lt;Interface&gt; SourceConnector"]
+            GitAdapt["Git Adapter"]
+            DayflowAdapt["Dayflow Adapter"]
+            SiYuanAdapt["SiYuan Adapter"]
+        end
+        
+        DB_Layer["SQLAlchemy ORM"]
+    end
+    
+    subgraph Infrastructure["基础设施"]
+        PG[("PostgreSQL")]
+        LLM_API["OpenAI / DeepSeek API"]
+    end
+
+    UI --> API
+    API --> Manager
+    Manager --> Interface
+    
+    Interface -.-> GitAdapt
+    Interface -.-> DayflowAdapt
+    Interface -.-> SiYuanAdapt
+    
+    Manager --> DB_Layer
+    AI_Engine --> DB_Layer
+    DB_Layer --> PG
+    AI_Engine --> LLM_API
+```
+
+## 核心概念
+
+### 统一活动模型 (Unified Activity Model)
+
+所有数据源的数据都被转换为统一的活动事件格式，存储在 `activities` 表中：
+
+| 字段名 | 类型 | 说明 | 示例 |
+|--------|------|------|------|
+| `id` | UUID | 主键 | - |
+| `user_id` | UUID | 用户ID | - |
+| `source_type` | String | 数据源类型 | "git", "dayflow", "siyuan" |
+| `source_id` | String | 来源方的唯一ID | Git Hash 或 UUID |
+| `occurred_at` | DateTime | 发生时间 | 2023-10-27 14:30:00 |
+| `title` | String | 简短描述 | "fix: payment logic" |
+| `content` | Text | 详细内容/上下文 | Commit Diff, 笔记正文 |
+| `metadata` | JSONB | 源特有数据 | `{"repo": "backend", "branch": "main"}` |
+| `fingerprint` | String | 哈希指纹 | 用于防止重复导入 |
+
+### 适配器模式 (Adapter Pattern)
+
+通过 `BaseConnector` 接口定义统一的数据源接入规范，每个数据源实现自己的适配器：
+
+- **Git Connector**: 从本地 Git 仓库读取提交记录
+- **Dayflow Connector**: 解析时间记录数据（CSV/API）
+- **SiYuan Connector**: 从思源笔记获取笔记内容
+
+这种设计使得添加新数据源变得非常简单，只需实现 `BaseConnector` 接口即可。
+
+## 项目结构
+
+```
+TraceWeaver/
+├── backend/                 # 后端服务
+│   ├── app/
+│   │   ├── api/            # API 路由层
+│   │   ├── core/           # 核心配置
+│   │   ├── models/         # SQLModel 数据模型
+│   │   ├── schemas/        # Pydantic 模型 (DTOs)
+│   │   ├── services/       # 业务逻辑层
+│   │   └── connectors/     # 数据源适配器层
+│   ├── alembic/            # 数据库迁移
+│   └── tests/              # 测试代码
+├── frontend/                # 前端应用
+│   ├── src/
+│   │   ├── components/     # React 组件
+│   │   ├── hooks/          # 自定义 Hooks
+│   │   ├── routes/         # 路由定义
+│   │   └── services/       # API 客户端
+│   └── tests/              # E2E 测试
+├── docs/                    # 项目文档
+│   └── ARCHITECTURE.md     # 架构设计文档
+├── docker-compose.yml       # Docker Compose 配置
+└── README.md               # 本文件
+```
+
+## 核心业务流程
+
+### 1. 同步 (Sync)
+
+1. 用户在前端点击"同步今日数据"
+2. 后端遍历用户配置的所有数据源
+3. 通过适配器工厂找到对应的 Connector
+4. Connector 抓取数据并转换为 `Activity` 对象
+5. 服务层进行指纹去重 (UPSERT)，存入数据库
+
+### 2. 生成 (Generate)
+
+1. 用户点击"生成日报/周报"
+2. 后端从数据库拉取指定时间范围内的所有活动
+3. 构建 Prompt，调用 LLM API
+4. LLM 返回 Markdown 格式的报告
+5. 存入 `reports` 表
+
+### 3. 反馈与迭代 (Refine)
+
+1. 前端展示 Markdown 编辑器
+2. 用户可以手动修改 AI 生成的内容
+3. 保存修改后的报告
+
+## 文档
+
+- [架构设计文档](docs/ARCHITECTURE.md) - 详细的系统架构和设计说明
+- [开发指南](development.md) - 本地开发环境设置和开发流程
+- [部署指南](deployment.md) - 生产环境部署说明
+- [后端文档](backend/README.md) - 后端开发详细说明
+- [前端文档](frontend/README.md) - 前端开发详细说明
+
+## 开发指南
+
+### 添加新的数据源
+
+1. 在 `backend/app/connectors/impl/` 创建新的连接器类
+2. 实现 `BaseConnector` 接口的两个方法：
+   - `validate_config()`: 验证配置有效性
+   - `fetch_activities()`: 抓取数据并转换为 `ActivityCreate` 对象
+3. 在 `connectors/registry.py` 中注册新连接器
+
+详细步骤请参考 [架构设计文档](docs/ARCHITECTURE.md#扩展指南)。
+
+### 运行测试
 
 ```bash
-git remote set-url origin git@github.com:octocat/my-full-stack.git
+# 后端测试
+cd backend
+bash scripts/test.sh
+
+# 前端 E2E 测试
+cd frontend
+npx playwright test
 ```
 
-- Add this repo as another "remote" to allow you to get updates later:
+### 代码格式化
+
+项目使用 `prek` 进行代码格式化和检查：
 
 ```bash
-git remote add upstream git@github.com:fastapi/full-stack-fastapi-template.git
+cd backend
+uv run prek run --all-files
 ```
 
-- Push the code to your new repository:
+## 贡献指南
 
-```bash
-git push -u origin master
-```
+欢迎贡献代码！请遵循以下步骤：
 
-### Update From the Original Template
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-After cloning the repository, and after doing changes, you might want to get the latest changes from this original template.
+## 许可证
 
-- Make sure you added the original repository as a remote, you can check it with:
+本项目采用 [LICENSE](LICENSE) 许可证。
 
-```bash
-git remote -v
+## 相关链接
 
-origin    git@github.com:octocat/my-full-stack.git (fetch)
-origin    git@github.com:octocat/my-full-stack.git (push)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (fetch)
-upstream    git@github.com:fastapi/full-stack-fastapi-template.git (push)
-```
+- [FastAPI 文档](https://fastapi.tiangolo.com/)
+- [React 文档](https://react.dev/)
+- [SQLModel 文档](https://sqlmodel.tiangolo.com/)
 
-- Pull the latest changes without merging:
+---
 
-```bash
-git pull --no-commit upstream master
-```
+**TraceWeaver** - 让工作痕迹自动编织成有价值的报告 ✨
 
-This will download the latest changes from this template without committing them, that way you can check everything is right before committing.
-
-- If there are conflicts, solve them in your editor.
-
-- Once you are done, commit the changes:
-
-```bash
-git merge --continue
-```
-
-### Configure
-
-You can then update configs in the `.env` files to customize your configurations.
-
-Before deploying it, make sure you change at least the values for:
-
-- `SECRET_KEY`
-- `FIRST_SUPERUSER_PASSWORD`
-- `POSTGRES_PASSWORD`
-
-You can (and should) pass these as environment variables from secrets.
-
-Read the [deployment.md](./deployment.md) docs for more details.
-
-### Generate Secret Keys
-
-Some environment variables in the `.env` file have a default value of `changethis`.
-
-You have to change them with a secret key, to generate secret keys you can run the following command:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
-
-Copy the content and use that as password / secret key. And run that again to generate another secure key.
-
-## How To Use It - Alternative With Copier
-
-This repository also supports generating a new project using [Copier](https://copier.readthedocs.io).
-
-It will copy all the files, ask you configuration questions, and update the `.env` files with your answers.
-
-### Install Copier
-
-You can install Copier with:
-
-```bash
-pip install copier
-```
-
-Or better, if you have [`pipx`](https://pipx.pypa.io/), you can run it with:
-
-```bash
-pipx install copier
-```
-
-**Note**: If you have `pipx`, installing copier is optional, you could run it directly.
-
-### Generate a Project With Copier
-
-Decide a name for your new project's directory, you will use it below. For example, `my-awesome-project`.
-
-Go to the directory that will be the parent of your project, and run the command with your project's name:
-
-```bash
-copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-If you have `pipx` and you didn't install `copier`, you can run it directly:
-
-```bash
-pipx run copier copy https://github.com/fastapi/full-stack-fastapi-template my-awesome-project --trust
-```
-
-**Note** the `--trust` option is necessary to be able to execute a [post-creation script](https://github.com/fastapi/full-stack-fastapi-template/blob/master/.copier/update_dotenv.py) that updates your `.env` files.
-
-### Input Variables
-
-Copier will ask you for some data, you might want to have at hand before generating the project.
-
-But don't worry, you can just update any of that in the `.env` files afterwards.
-
-The input variables, with their default values (some auto generated) are:
-
-- `project_name`: (default: `"FastAPI Project"`) The name of the project, shown to API users (in .env).
-- `stack_name`: (default: `"fastapi-project"`) The name of the stack used for Docker Compose labels and project name (no spaces, no periods) (in .env).
-- `secret_key`: (default: `"changethis"`) The secret key for the project, used for security, stored in .env, you can generate one with the method above.
-- `first_superuser`: (default: `"admin@example.com"`) The email of the first superuser (in .env).
-- `first_superuser_password`: (default: `"changethis"`) The password of the first superuser (in .env).
-- `smtp_host`: (default: "") The SMTP server host to send emails, you can set it later in .env.
-- `smtp_user`: (default: "") The SMTP server user to send emails, you can set it later in .env.
-- `smtp_password`: (default: "") The SMTP server password to send emails, you can set it later in .env.
-- `emails_from_email`: (default: `"info@example.com"`) The email account to send emails from, you can set it later in .env.
-- `postgres_password`: (default: `"changethis"`) The password for the PostgreSQL database, stored in .env, you can generate one with the method above.
-- `sentry_dsn`: (default: "") The DSN for Sentry, if you are using it, you can set it later in .env.
-
-## Backend Development
-
-Backend docs: [backend/README.md](./backend/README.md).
-
-## Frontend Development
-
-Frontend docs: [frontend/README.md](./frontend/README.md).
-
-## Deployment
-
-Deployment docs: [deployment.md](./deployment.md).
-
-## Development
-
-General development docs: [development.md](./development.md).
-
-This includes using Docker Compose, custom local domains, `.env` configurations, etc.
-
-## Release Notes
-
-Check the file [release-notes.md](./release-notes.md).
-
-## License
-
-The Full Stack FastAPI Template is licensed under the terms of the MIT license.

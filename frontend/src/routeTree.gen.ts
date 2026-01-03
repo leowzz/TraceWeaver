@@ -16,7 +16,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
-import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
+import { Route as LayoutLlmPromptsRouteImport } from './routes/_layout/llm-prompts'
+import { Route as LayoutLlmModelsRouteImport } from './routes/_layout/llm-models'
 import { Route as LayoutDatasourcesRouteImport } from './routes/_layout/datasources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
@@ -54,9 +55,14 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutItemsRoute = LayoutItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
+const LayoutLlmPromptsRoute = LayoutLlmPromptsRouteImport.update({
+  id: '/llm-prompts',
+  path: '/llm-prompts',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutLlmModelsRoute = LayoutLlmModelsRouteImport.update({
+  id: '/llm-models',
+  path: '/llm-models',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutDatasourcesRoute = LayoutDatasourcesRouteImport.update({
@@ -77,7 +83,8 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
-  '/items': typeof LayoutItemsRoute
+  '/llm-models': typeof LayoutLlmModelsRoute
+  '/llm-prompts': typeof LayoutLlmPromptsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
 }
@@ -88,7 +95,8 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
-  '/items': typeof LayoutItemsRoute
+  '/llm-models': typeof LayoutLlmModelsRoute
+  '/llm-prompts': typeof LayoutLlmPromptsRoute
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
 }
@@ -101,7 +109,8 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/datasources': typeof LayoutDatasourcesRoute
-  '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/llm-models': typeof LayoutLlmModelsRoute
+  '/_layout/llm-prompts': typeof LayoutLlmPromptsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
 }
@@ -114,7 +123,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
-    | '/items'
+    | '/llm-models'
+    | '/llm-prompts'
     | '/settings'
     | '/'
   fileRoutesByTo: FileRoutesByTo
@@ -125,7 +135,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
-    | '/items'
+    | '/llm-models'
+    | '/llm-prompts'
     | '/settings'
     | '/'
   id:
@@ -137,7 +148,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/datasources'
-    | '/_layout/items'
+    | '/_layout/llm-models'
+    | '/_layout/llm-prompts'
     | '/_layout/settings'
     | '/_layout/'
   fileRoutesById: FileRoutesById
@@ -201,11 +213,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/items': {
-      id: '/_layout/items'
-      path: '/items'
-      fullPath: '/items'
-      preLoaderRoute: typeof LayoutItemsRouteImport
+    '/_layout/llm-prompts': {
+      id: '/_layout/llm-prompts'
+      path: '/llm-prompts'
+      fullPath: '/llm-prompts'
+      preLoaderRoute: typeof LayoutLlmPromptsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/llm-models': {
+      id: '/_layout/llm-models'
+      path: '/llm-models'
+      fullPath: '/llm-models'
+      preLoaderRoute: typeof LayoutLlmModelsRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/datasources': {
@@ -228,7 +247,8 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutDatasourcesRoute: typeof LayoutDatasourcesRoute
-  LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutLlmModelsRoute: typeof LayoutLlmModelsRoute
+  LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
@@ -236,7 +256,8 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutDatasourcesRoute: LayoutDatasourcesRoute,
-  LayoutItemsRoute: LayoutItemsRoute,
+  LayoutLlmModelsRoute: LayoutLlmModelsRoute,
+  LayoutLlmPromptsRoute: LayoutLlmPromptsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }

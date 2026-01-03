@@ -3,7 +3,21 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { HealthHealthResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class HealthService {
+    /**
+     * Health
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static health(): CancelablePromise<HealthHealthResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/health'
+        });
+    }
+}
 
 export class ItemsService {
     /**
@@ -109,6 +123,255 @@ export class ItemsService {
             path: {
                 id: data.id
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class LlmModelConfigsService {
+    /**
+     * Read Llm Model Configs
+     * Retrieve LLM Model configurations.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns LLMModelConfigsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readLlmModelConfigs(data: LlmModelConfigsReadLlmModelConfigsData = {}): CancelablePromise<LlmModelConfigsReadLlmModelConfigsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/llm-model-configs/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Llm Model Config
+     * Create new LLM Model configuration.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns LLMModelConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static createLlmModelConfig(data: LlmModelConfigsCreateLlmModelConfigData): CancelablePromise<LlmModelConfigsCreateLlmModelConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/llm-model-configs/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Llm Model Config
+     * Get LLM Model configuration by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns LLMModelConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static readLlmModelConfig(data: LlmModelConfigsReadLlmModelConfigData): CancelablePromise<LlmModelConfigsReadLlmModelConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/llm-model-configs/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Llm Model Config
+     * Update an LLM Model configuration.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns LLMModelConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateLlmModelConfig(data: LlmModelConfigsUpdateLlmModelConfigData): CancelablePromise<LlmModelConfigsUpdateLlmModelConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/llm-model-configs/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Llm Model Config
+     * Delete an LLM Model configuration.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteLlmModelConfig(data: LlmModelConfigsDeleteLlmModelConfigData): CancelablePromise<LlmModelConfigsDeleteLlmModelConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/llm-model-configs/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class LlmPromptsService {
+    /**
+     * Read Llm Prompts
+     * Retrieve LLM Prompts.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns LLMPromptsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readLlmPrompts(data: LlmPromptsReadLlmPromptsData = {}): CancelablePromise<LlmPromptsReadLlmPromptsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/llm-prompts/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Llm Prompt
+     * Create new LLM Prompt.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns LLMPromptPublic Successful Response
+     * @throws ApiError
+     */
+    public static createLlmPrompt(data: LlmPromptsCreateLlmPromptData): CancelablePromise<LlmPromptsCreateLlmPromptResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/llm-prompts/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Llm Prompt
+     * Get LLM Prompt by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns LLMPromptPublic Successful Response
+     * @throws ApiError
+     */
+    public static readLlmPrompt(data: LlmPromptsReadLlmPromptData): CancelablePromise<LlmPromptsReadLlmPromptResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/llm-prompts/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Llm Prompt
+     * Update an LLM Prompt.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns LLMPromptPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateLlmPrompt(data: LlmPromptsUpdateLlmPromptData): CancelablePromise<LlmPromptsUpdateLlmPromptResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/llm-prompts/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Llm Prompt
+     * Delete an LLM Prompt.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteLlmPrompt(data: LlmPromptsDeleteLlmPromptData): CancelablePromise<LlmPromptsDeleteLlmPromptResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/llm-prompts/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Test Llm Prompt
+     * Test an LLM Prompt with an uploaded image.
+     *
+     * This endpoint allows testing a prompt template with a specific LLM model
+     * and an uploaded image to preview the analysis result.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.formData
+     * @returns LLMPromptTestResponse Successful Response
+     * @throws ApiError
+     */
+    public static testLlmPrompt(data: LlmPromptsTestLlmPromptData): CancelablePromise<LlmPromptsTestLlmPromptResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/llm-prompts/{id}/test',
+            path: {
+                id: data.id
+            },
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 422: 'Validation Error'
             }

@@ -3,3 +3,5 @@ alwaysApply: true
 ---
 
 - 项目使用loguru作为日志框架
+- 不要手写alembic脚本,编写完model定义后通过命令行自动生成. 但不要执行
+- **不要有实体外键约束**, 如果需要配置relationship-通过虚拟外键关系

@@ -27,6 +27,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
         content={
             "error": True,
             "message": exc.detail,
+            "detail": exc.detail,  # Add for backward compatibility with tests
             "status_code": exc.status_code,
             "trace_id": trace_id,
         },

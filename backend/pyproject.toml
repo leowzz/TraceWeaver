@@ -21,6 +21,7 @@ dependencies = [
     "pydantic-settings<3.0.0,>=2.2.1",
     "pyjwt<3.0.0,>=2.8.0",
     "loguru>=0.7.3",
+    "redis>=5.0.0",
 ]
 [project.optional-dependencies]
 git = [

@@ -237,6 +237,159 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const SourceConfigCreateSchema = {
+    properties: {
+        type: {
+            '$ref': '#/components/schemas/SourceType',
+            description: 'Data source type'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'User-defined name for this configuration'
+        },
+        config_payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Config Payload',
+            description: 'Source-specific configuration'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            description: 'Whether this config is active',
+            default: true
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        }
+    },
+    type: 'object',
+    required: ['type', 'name', 'config_payload', 'user_id'],
+    title: 'SourceConfigCreate',
+    description: 'Schema for creating a new source configuration.'
+} as const;
+
+export const SourceConfigPublicSchema = {
+    properties: {
+        type: {
+            '$ref': '#/components/schemas/SourceType',
+            description: 'Data source type'
+        },
+        name: {
+            type: 'string',
+            title: 'Name',
+            description: 'User-defined name for this configuration'
+        },
+        config_payload: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Config Payload',
+            description: 'Source-specific configuration'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active',
+            description: 'Whether this config is active',
+            default: true
+        },
+        id: {
+            type: 'integer',
+            title: 'Id'
+        },
+        user_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'User Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: ['type', 'name', 'config_payload', 'id', 'user_id', 'created_at', 'updated_at'],
+    title: 'SourceConfigPublic',
+    description: 'Schema for source configuration returned from API.'
+} as const;
+
+export const SourceConfigUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        config_payload: {
+            anyOf: [
+                {
+                    additionalProperties: true,
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Config Payload'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'SourceConfigUpdate',
+    description: 'Schema for updating source configuration.'
+} as const;
+
+export const SourceConfigsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/SourceConfigPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'SourceConfigsPublic',
+    description: 'Schema for paginated list of source configurations.'
+} as const;
+
+export const SourceTypeSchema = {
+    type: 'string',
+    enum: ['GIT', 'DAYFLOW', 'SIYUAN'],
+    title: 'SourceType',
+    description: 'Data source types.'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {

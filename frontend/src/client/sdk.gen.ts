@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class ItemsService {
     /**
@@ -228,6 +228,138 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class SourceConfigsService {
+    /**
+     * Read Source Configs
+     * Retrieve source configurations for the current user.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns SourceConfigsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readSourceConfigs(data: SourceConfigsReadSourceConfigsData = {}): CancelablePromise<SourceConfigsReadSourceConfigsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/source-configs/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Source Config
+     * Create new source configuration.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns SourceConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static createSourceConfig(data: SourceConfigsCreateSourceConfigData): CancelablePromise<SourceConfigsCreateSourceConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/source-configs/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Source Config
+     * Get source configuration by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns SourceConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static readSourceConfig(data: SourceConfigsReadSourceConfigData): CancelablePromise<SourceConfigsReadSourceConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/source-configs/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Source Config
+     * Update a source configuration.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns SourceConfigPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateSourceConfig(data: SourceConfigsUpdateSourceConfigData): CancelablePromise<SourceConfigsUpdateSourceConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/source-configs/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Source Config
+     * Delete a source configuration.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteSourceConfig(data: SourceConfigsDeleteSourceConfigData): CancelablePromise<SourceConfigsDeleteSourceConfigResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/source-configs/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Test Source Config Connection
+     * Test the connection to a configured data source.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static testSourceConfigConnection(data: SourceConfigsTestSourceConfigConnectionData): CancelablePromise<SourceConfigsTestSourceConfigConnectionResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/source-configs/{id}/test',
+            path: {
+                id: data.id
+            },
             errors: {
                 422: 'Validation Error'
             }

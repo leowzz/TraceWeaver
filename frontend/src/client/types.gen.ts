@@ -51,6 +51,83 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+/**
+ * Schema for creating a new source configuration.
+ */
+export type SourceConfigCreate = {
+    /**
+     * Data source type
+     */
+    type: SourceType;
+    /**
+     * User-defined name for this configuration
+     */
+    name: string;
+    /**
+     * Source-specific configuration
+     */
+    config_payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * Whether this config is active
+     */
+    is_active?: boolean;
+    user_id: string;
+};
+
+/**
+ * Schema for source configuration returned from API.
+ */
+export type SourceConfigPublic = {
+    /**
+     * Data source type
+     */
+    type: SourceType;
+    /**
+     * User-defined name for this configuration
+     */
+    name: string;
+    /**
+     * Source-specific configuration
+     */
+    config_payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * Whether this config is active
+     */
+    is_active?: boolean;
+    id: number;
+    user_id: string;
+    created_at: string;
+    updated_at: string;
+};
+
+/**
+ * Schema for paginated list of source configurations.
+ */
+export type SourceConfigsPublic = {
+    data: Array<SourceConfigPublic>;
+    count: number;
+};
+
+/**
+ * Schema for updating source configuration.
+ */
+export type SourceConfigUpdate = {
+    name?: (string | null);
+    config_payload?: ({
+    [key: string]: unknown;
+} | null);
+    is_active?: (boolean | null);
+};
+
+/**
+ * Data source types.
+ */
+export type SourceType = 'GIT' | 'DAYFLOW' | 'SIYUAN';
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -170,6 +247,44 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type SourceConfigsReadSourceConfigsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type SourceConfigsReadSourceConfigsResponse = (SourceConfigsPublic);
+
+export type SourceConfigsCreateSourceConfigData = {
+    requestBody: SourceConfigCreate;
+};
+
+export type SourceConfigsCreateSourceConfigResponse = (SourceConfigPublic);
+
+export type SourceConfigsReadSourceConfigData = {
+    id: number;
+};
+
+export type SourceConfigsReadSourceConfigResponse = (SourceConfigPublic);
+
+export type SourceConfigsUpdateSourceConfigData = {
+    id: number;
+    requestBody: SourceConfigUpdate;
+};
+
+export type SourceConfigsUpdateSourceConfigResponse = (SourceConfigPublic);
+
+export type SourceConfigsDeleteSourceConfigData = {
+    id: number;
+};
+
+export type SourceConfigsDeleteSourceConfigResponse = (Message);
+
+export type SourceConfigsTestSourceConfigConnectionData = {
+    id: number;
+};
+
+export type SourceConfigsTestSourceConfigConnectionResponse = (Message);
 
 export type UsersReadUsersData = {
     limit?: number;

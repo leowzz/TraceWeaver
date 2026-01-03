@@ -1,29 +1,28 @@
-"""Source configuration schemas including specific config schemas for each data source."""
-
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import ConfigDict, Field, HttpUrl
+from sqlmodel import SQLModel
 
 from app.models.enums import SourceType
 
 
 # Specific configuration schemas for each data source
-class GitConfig(BaseModel):
+class GitConfig(SQLModel):
     """Git repository configuration."""
 
     repo_path: str = Field(..., description="Absolute path to git repository")
     branch: str = Field(default="main", description="Branch to track")
 
 
-class DayflowConfig(BaseModel):
+class DayflowConfig(SQLModel):
     """Dayflow API configuration."""
 
     api_url: HttpUrl = Field(..., description="Dayflow API URL")
     api_token: str = Field(..., description="API authentication token")
 
 
-class SiYuanConfig(BaseModel):
+class SiYuanConfig(SQLModel):
     """SiYuan note-taking app configuration."""
 
     api_url: HttpUrl = Field(
@@ -33,7 +32,7 @@ class SiYuanConfig(BaseModel):
 
 
 # Base schema
-class SourceConfigBase(BaseModel):
+class SourceConfigBase(SQLModel):
     """Base source configuration schema."""
 
     type: SourceType = Field(..., description="Data source type")
@@ -50,7 +49,7 @@ class SourceConfigCreate(SourceConfigBase):
 
 
 # Update schema
-class SourceConfigUpdate(BaseModel):
+class SourceConfigUpdate(SQLModel):
     """Schema for updating source configuration."""
 
     name: str | None = None
@@ -62,13 +61,15 @@ class SourceConfigUpdate(BaseModel):
 class SourceConfigPublic(SourceConfigBase):
     """Schema for source configuration returned from API."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
 
 
-class SourceConfigsPublic(BaseModel):
+class SourceConfigsPublic(SQLModel):
     """Schema for paginated list of source configurations."""
 
     data: list[SourceConfigPublic]

@@ -58,13 +58,16 @@ class SourceConfigUpdate(SQLModel):
 
 
 # Public schema
-class SourceConfigPublic(SourceConfigBase):
+class SourceConfigPublic(SQLModel):
     """Schema for source configuration returned from API."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     user_id: uuid.UUID
+    type: SourceType = Field(..., description="Data source type")
+    name: str = Field(..., description="User-defined name for this configuration")
+    is_active: bool = Field(default=True, description="Whether this config is active")
     created_at: datetime
     updated_at: datetime
 

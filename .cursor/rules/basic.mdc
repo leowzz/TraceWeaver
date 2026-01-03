@@ -5,3 +5,5 @@ alwaysApply: true
 - 项目使用loguru作为日志框架
 - 不要手写alembic脚本,编写完model定义后通过命令行自动生成. 但不要执行
 - **不要有实体外键约束**, 如果需要配置relationship-通过虚拟外键关系
+- 复杂对象/函数中存在多个参数. 封装为pydantic的schema, 轻易不要传递dict或get_item方式取值
+- 不要使用 `int | None` 这种类型定义，要用 `Optional[int]`

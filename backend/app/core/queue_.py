@@ -26,7 +26,7 @@ def get_redis_client() -> Redis:
     return _redis_client
 
 
-QUEUE_NAME = "vlm_image_analysis_queue"
+QUEUE_NAME = "llm_image_analysis_queue"
 
 
 def enqueue_image_analysis_task(task_data: dict[str, Any]) -> None:
@@ -36,8 +36,8 @@ def enqueue_image_analysis_task(task_data: dict[str, Any]) -> None:
         task_data: Task data dictionary containing:
             - img_path: Image path
             - source_type: Source type (e.g., "SIYUAN")
-            - vlm_prompt_id: VLM prompt template ID
-            - model_name: VLM model name (e.g., "qwen3-vl:2B")
+            - llm_prompt_id: LLM prompt template ID
+            - model_name: LLM model name (e.g., "qwen3-vl:2B")
     """
     client = get_redis_client()
     try:

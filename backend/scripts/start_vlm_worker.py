@@ -1,4 +1,4 @@
-"""Run VLM Image Analysis Worker.
+"""Run LLM Image Analysis Worker.
 
 This script starts the worker process that processes image analysis tasks from Redis queue.
 """
@@ -6,12 +6,12 @@ This script starts the worker process that processes image analysis tasks from R
 import asyncio
 
 from app.core.logger import logger
-from app.workers.vlm_image_worker import worker_loop
+from app.workers.llm_image_worker import worker_loop
 
 
 async def main():
     """Main entry point for the worker."""
-    logger.info("Starting VLM Image Analysis Worker...")
+    logger.info("Starting LLM Image Analysis Worker...")
     try:
         await worker_loop()
     except KeyboardInterrupt:

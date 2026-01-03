@@ -32,6 +32,7 @@ sentry = [
 ]
 vlm = [
     "ollama>=0.6.1",
+    "agno>=2.3.21",
 ]
 
 

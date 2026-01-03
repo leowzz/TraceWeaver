@@ -23,3 +23,17 @@ class AnalysisStatus(str, Enum):
     PROCESSING = "PROCESSING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+
+
+class LLMProvider(str, Enum):
+    """LLM/LLM model provider types.
+    
+    Note: All providers are accessed through agno framework as unified agent interface.
+    The provider type indicates which underlying model service to use, but all calls
+    go through agno Agent for consistency.
+    """
+
+    OPENAI = "OPENAI"
+    ANTHROPIC = "ANTHROPIC"
+    OLLAMA = "OLLAMA"
+    # Add more providers as needed

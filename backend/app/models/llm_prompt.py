@@ -1,4 +1,4 @@
-"""VLM Prompt model - Stores VLM prompt templates for image analysis."""
+"""LLM Prompt model - Stores LLM prompt templates for image analysis."""
 
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -9,13 +9,13 @@ if TYPE_CHECKING:
     from app.models.image_analysis import ImageAnalysis
 
 
-class VLMPrompt(SQLModel, table=True):
-    """VLM Prompt template for image analysis.
+class LLMPrompt(SQLModel, table=True):
+    """LLM Prompt template for image analysis.
 
     Stores reusable prompt templates that define how images should be analyzed.
     """
 
-    __tablename__ = "vlm_prompt"
+    __tablename__ = "llm_prompt"
 
     # Primary key
     id: int | None = Field(default=None, primary_key=True)
@@ -27,10 +27,10 @@ class VLMPrompt(SQLModel, table=True):
 
     # Relationship
     image_analyses: list["ImageAnalysis"] = Relationship(
-        back_populates="vlm_prompt",
+        back_populates="llm_prompt",
         sa_relationship_kwargs={
-            "primaryjoin": "ImageAnalysis.vlm_prompt_id==VLMPrompt.id",
-            "foreign_keys": "[ImageAnalysis.vlm_prompt_id]",
+            "primaryjoin": "ImageAnalysis.llm_prompt_id==LLMPrompt.id",
+            "foreign_keys": "[ImageAnalysis.llm_prompt_id]",
         },
     )
 

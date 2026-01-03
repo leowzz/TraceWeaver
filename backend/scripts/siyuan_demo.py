@@ -59,7 +59,7 @@ async def main():
     logger.info(f"{len(r)=} bytes")
     logger.debug(f"{r[:100]=}")
 
-    # Save image to temporary file for ollama VLM
+    # Save image to temporary file for ollama LLM
     # ollama needs file path (absolute path)
     # with open('1.jpg', 'wb') as f:
     #     f.write(r)

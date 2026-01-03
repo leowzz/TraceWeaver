@@ -22,11 +22,11 @@ from app.models import (  # noqa: F401
     Item,
     SourceConfig,
     User,
-    VLMPrompt,
+    LLMPrompt,
 )
 # Explicitly import model classes to ensure they're available for relationship resolution
 from app.models.image_analysis import ImageAnalysis  # noqa: F401
-from app.models.vlm_prompt import VLMPrompt  # noqa: F401
+from app.models.llm_prompt import LLMPrompt  # noqa: F401
 # Ensure User and Item are imported (they're in the same file)
 from app.models.user import User, Item  # noqa: F401
 from tests.utils.user import authentication_token_from_email
@@ -123,7 +123,7 @@ def test_engine():
         _ = Activity.__table__
         _ = SourceConfig.__table__
         _ = ImageAnalysis.__table__
-        _ = VLMPrompt.__table__
+        _ = LLMPrompt.__table__
     except AttributeError:
         # If __table__ doesn't exist yet, models will be registered when create_all is called
         pass

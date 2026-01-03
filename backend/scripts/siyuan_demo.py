@@ -42,7 +42,20 @@ async def main():
     siyuan_client = connector._get_client()
     # content = await siyuan_client.export_md_content('20251219110521-sdsn8e5')
     # logger.info(f"{content}")
-    r = await siyuan_client.get_file('/data/assets/image-20251218214401-pyec85e.png')
+    # return
+
+    # r = await siyuan_client.get_file('/data/assets/image-20251218214401-pyec85e.png')
+    # >> 火山引擎"更新无状态负载"配置界面，展示环境变量、存储配置（含主目录、挂载卷、生命周期）等核心参数设置项。
+
+
+    # r = await siyuan_client.get_file('/data/assets/image-20251219112214-yes1aua.png')
+    # >> 一张代码编辑器界面截图，显示GitHub项目中的Go配置文件config/reloader.go。
+    # 该文件用于增强规则文件热重载管理器功能，支持K8s ConfigMap挂载场景，包含文件重载监控、K8s ConfigMap挂载检测逻辑及相关配置变量和函数。
+
+    r = await siyuan_client.get_file('/data/assets/image-20251219112035-5zqm3ln.png')
+    # >> 一个容器日志监控界面，显示近期内Binlog日志信息，包含INFO级别日志记录Binlog文件旋转、MySQL同步操作及连接信息。
+
+
     logger.info(f"{len(r)=} bytes")
     logger.debug(f"{r[:100]=}")
 
@@ -151,7 +164,8 @@ async def main():
             }
         ],
     )
-    logger.info(f"Image analysis result: {response=}")
+    logger.info(f"Image analysis result: {response.model_dump(exclude={'message'})=}")
+    logger.info(f"{response.message.content}")
 
 
 

@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+- 项目使用loguru作为日志框架

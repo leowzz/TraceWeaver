@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
+import logging
+
 from app.core.config import settings
 from loguru import logger
 import sys
@@ -20,6 +22,32 @@ LOG_FMT = (
     "<le>{name}.{function}:{line}</le> {trace_id} | <level>{message}</level>"
 )
 
+
+class InterceptHandler(logging.Handler):
+    """
+    Loguru官方替换Handler的方法
+    Default handler from examples in loguru documentation.
+    See https://loguru.readthedocs.io/en/stable/overview.html#entirely-compatible-with-standard-logging
+    """
+
+    def emit(self, record: logging.LogRecord):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message
+        frame, depth = logging.currentframe(), 2
+        while frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
 logger.remove()
 logger.add(
     sys.stderr,
@@ -27,6 +55,10 @@ logger.add(
     filter=context_info_filter,
     level=settings.LOG_LEVEL,
 )
+
+intercept_handler = InterceptHandler()
+logging.getLogger("uvicorn").handlers = [intercept_handler]
+logging.getLogger("uvicorn.access").handlers = [intercept_handler]
 
 if __name__ == '__main__':
     from app.core.context import ctx, mock_ctx

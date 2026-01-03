@@ -1,15 +1,24 @@
 import sentry_sdk
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.routing import APIRoute
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
+from app.api.deps import SessionDep
 from app.api.main import api_router
 from app.core.config import settings
+from app.core.exceptions import (
+    general_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
+)
 from app.core.middleware import ContextMiddleware
+from app.core.logger import logger
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
-    return f"{route.tags[0]}-{route.name}"
+    return f"{route.tags[0] if route.tags else ''}-{route.name}"
 
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
@@ -21,16 +30,31 @@ app = FastAPI(
     generate_unique_id_function=custom_generate_unique_id,
 )
 
-app.add_middleware(ContextMiddleware)
+app.add_middleware(ContextMiddleware)  # noqa
+
+# Register exception handlers
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(ResponseValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # Set all CORS enabled origins
 if settings.all_cors_origins:
     app.add_middleware(
-        CORSMiddleware,
+        CORSMiddleware,  # noqa
         allow_origins=settings.all_cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+
+@app.get('/health', tags=['health'])
+def health(session: SessionDep):
+    from sqlalchemy import select, func
+    r = session.exec(select(func.now())).scalar()
+    logger.info(f"{r=}")
+    return {'status': 'ok', 'date': r}
+
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

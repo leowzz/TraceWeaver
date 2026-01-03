@@ -17,7 +17,7 @@ class CtxProxy:
     def __getattr__(self, name: str) -> Any:
         info = _ctx_var.get()
         if info is None:
-            raise RuntimeError("Context not initialized. Are you outside of a request or mock_ctx?")
+            return None
         return getattr(info, name)
 
     def __setattr__(self, name: str, value: Any) -> None:

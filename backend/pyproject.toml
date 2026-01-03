@@ -19,13 +19,15 @@ dependencies = [
     # Pin bcrypt until passlib supports the latest
     "bcrypt==4.3.0",
     "pydantic-settings<3.0.0,>=2.2.1",
-    "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
     "pyjwt<3.0.0,>=2.8.0",
     "loguru>=0.7.3",
 ]
 [project.optional-dependencies]
 git = [
     "gitpython>=3.1.46",
+]
+sentry = [
+    "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
 ]
 
 
@@ -37,6 +39,7 @@ dev-dependencies = [
     "prek>=0.2.24,<1.0.0",
     "types-passlib<2.0.0.0,>=1.7.7.20240106",
     "coverage<8.0.0,>=7.4.3",
+    "uvicorn==0.38.0"
 ]
 
 [build-system]
@@ -53,21 +56,21 @@ exclude = ["alembic"]
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
     "ARG001", # unused arguments in functions
-    "T201",   # print statements are not allowed
+    "T201", # print statements are not allowed
 ]
 ignore = [
-    "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-    "W191",  # indentation contains tabs
-    "B904",  # Allow raising exceptions without from e, for HTTPException
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "W191", # indentation contains tabs
+    "B904", # Allow raising exceptions without from e, for HTTPException
 ]
 
 [tool.ruff.lint.pyupgrade]

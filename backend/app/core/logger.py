@@ -58,7 +58,7 @@ logger.add(
 
 intercept_handler = InterceptHandler()
 logging.getLogger("uvicorn").handlers = [intercept_handler]
-logging.getLogger("uvicorn.access").handlers = [intercept_handler]
+logging.getLogger("uvicorn.access").handlers = []
 
 if __name__ == '__main__':
     from app.core.context import ctx, mock_ctx

@@ -1,4 +1,3 @@
-import sentry_sdk
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.routing import APIRoute
@@ -15,6 +14,7 @@ from app.core.exceptions import (
 )
 from app.core.middleware import ContextMiddleware
 from app.core.logger import logger
+from contextlib import asynccontextmanager
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -22,12 +22,22 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 
 if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
+    import sentry_sdk
     sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
+
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     logger.info("start up")
+#     yield
+#     logger.info("shut down")
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
+    # lifespan=lifespan
 )
 
 app.add_middleware(ContextMiddleware)  # noqa

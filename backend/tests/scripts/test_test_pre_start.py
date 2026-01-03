@@ -11,7 +11,7 @@ def test_init_successful_connection() -> None:
     session_mock = MagicMock()
     exec_mock = MagicMock(return_value=True)
     session_mock.exec = exec_mock
-    
+
     # Make session_mock work as a context manager
     session_mock.__enter__ = MagicMock(return_value=session_mock)
     session_mock.__exit__ = MagicMock(return_value=False)
@@ -28,9 +28,8 @@ def test_init_successful_connection() -> None:
         except Exception:
             connection_successful = False
 
-        assert (
-            connection_successful
-        ), "The database connection should be successful and not raise an exception."
+        assert connection_successful, (
+            "The database connection should be successful and not raise an exception."
+        )
 
         session_mock.exec.assert_called()
-

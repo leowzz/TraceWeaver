@@ -29,6 +29,9 @@ git = [
 sentry = [
     "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
 ]
+vlm = [
+    "ollama>=0.6.1",
+]
 
 
 [tool.uv]

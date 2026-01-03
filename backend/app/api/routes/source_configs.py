@@ -112,7 +112,7 @@ def delete_source_config(
 
 
 @router.post("/{id}/test", response_model=Message)
-def test_source_config_connection(
+async def test_source_config_connection(
     session: SessionDep, current_user: CurrentUser, id: int
 ) -> Message:
     """
@@ -126,24 +126,24 @@ def test_source_config_connection(
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    # Get the connector for this source type
+    # Get the connector instance for this source type
     connector_key = config.type.value.lower()
-    connector_class = registry.get(connector_key)
     
-    if not connector_class:
+    try:
+        connector = registry.get(config)
+    except ValueError as e:
         raise HTTPException(
             status_code=500,
-            detail=f"No connector found for source type: {config.type}",
+            detail=str(e),
         )
     
     try:
-        # Instantiate connector with config
-        connector = connector_class(config)
+        # Test the connection (assuming connectors have a test_connection method)
         
         # Test the connection (assuming connectors have a test_connection method)
         # If they don't have this method, we'll need to add it
         if hasattr(connector, "test_connection"):
-            connector.test_connection()
+            await connector.test_connection()
             return Message(message="Connection test successful")
         else:
             # Fallback: just try to instantiate

@@ -3,7 +3,8 @@
 from datetime import datetime
 
 import httpx
-
+from fastapi import HTTPException
+from loguru import logger
 from app.connectors.base import BaseConnector
 from app.models.enums import SourceType
 from app.schemas.activity import ActivityCreate
@@ -41,14 +42,16 @@ class SiYuanConnector(BaseConnector):
 
         # Test connection
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(base_url=api_url) as client:
+                logger.debug(f"Testing SiYuan connection to {api_url}")
                 response = await client.post(
-                    f"{api_url}/api/system/version",
+                    "/api/system/version",
                     headers={"Authorization": f"Token {api_token}"},
                     timeout=5.0,
                 )
                 if response.status_code != 200:
                     raise ConnectionError(f"API returned status {response.status_code}")
+                logger.info(f"SiYuan connection successful: {response.text}")
                 return True
         except httpx.HTTPError as e:
             raise ConnectionError(f"Failed to connect to SiYuan API: {e}")
@@ -71,9 +74,9 @@ class SiYuanConnector(BaseConnector):
         api_token = self.config.api_token
 
         # Query notes created or updated in the time range
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(base_url=api_url) as client:
             response = await client.post(
-                f"{api_url}/api/query/sql",
+                "/api/query/sql",
                 headers={"Authorization": f"Token {api_token}"},
                 json={
                     "stmt": f"""
@@ -133,3 +136,10 @@ class SiYuanConnector(BaseConnector):
             activities.append(activity)
 
         return activities
+    
+    async def test_connection(self):
+        try:
+            await self.validate_config()
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))

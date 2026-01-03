@@ -3,7 +3,12 @@
 from typing import Type
 
 from app.connectors.base import BaseConnector
+from app.models import SourceConfig, SourceType
+from app.schemas.source_config import SiYuanConfig
 
+SourceType2ConfigSchema = {
+    SourceType.SIYUAN: SiYuanConfig
+}
 
 class ConnectorRegistry:
     """Factory for creating and managing data source connectors."""
@@ -20,12 +25,11 @@ class ConnectorRegistry:
         """
         self._connectors[source_type] = connector_class
 
-    def get(self, source_type: str, config) -> BaseConnector:
+    def get(self, source_config: SourceConfig) -> BaseConnector:
         """Get a connector instance for the specified source type.
 
         Args:
-            source_type: Data source type
-            config: Configuration schema for the connector
+            source_config: Configuration schema for the connector
 
         Returns:
             Connector instance
@@ -33,6 +37,14 @@ class ConnectorRegistry:
         Raises:
             ValueError: If source type is not registered
         """
+        if not source_config:
+            raise ValueError("Source config is required")
+        source_type = source_config.type
+        ConfigSchema = SourceType2ConfigSchema.get(source_type)
+        if not ConfigSchema:
+            raise ValueError(f"Unknown connector type: {source_type}")
+        config = ConfigSchema.model_validate(source_config.config_payload)
+
         if source_type not in self._connectors:
             raise ValueError(f"Unknown connector type: {source_type}")
         return self._connectors[source_type](config)

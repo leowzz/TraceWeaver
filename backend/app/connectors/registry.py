@@ -1,6 +1,6 @@
 """Connector registry - Factory pattern for managing connectors."""
 
-from typing import Type
+from typing import Type, TypeVar
 
 from app.connectors.base import BaseConnector
 from app.models import SourceConfig, SourceType
@@ -9,14 +9,15 @@ from app.schemas.source_config import SiYuanConfig
 SourceType2ConfigSchema = {
     SourceType.SIYUAN: SiYuanConfig
 }
+ConnectorType = TypeVar("ConnectorType", bound=BaseConnector)
 
 class ConnectorRegistry:
     """Factory for creating and managing data source connectors."""
 
     def __init__(self):
-        self._connectors: dict[str, Type[BaseConnector]] = {}
+        self._connectors: dict[str, ConnectorType] = {}
 
-    def register(self, source_type: str, connector_class: Type[BaseConnector]):
+    def register(self, source_type: str, connector_class: ConnectorType):
         """Register a connector class for a data source type.
 
         Args:
@@ -25,7 +26,7 @@ class ConnectorRegistry:
         """
         self._connectors[source_type] = connector_class
 
-    def get(self, source_config: SourceConfig) -> BaseConnector:
+    def get(self, source_config: SourceConfig) -> ConnectorType:
         """Get a connector instance for the specified source type.
 
         Args:

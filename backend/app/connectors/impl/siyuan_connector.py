@@ -6,6 +6,7 @@ import httpx
 from fastapi import HTTPException
 from loguru import logger
 from app.connectors.base import BaseConnector
+from app.core.context import ctx
 from app.models.enums import SourceType
 from app.schemas.activity import ActivityCreate
 from app.schemas.source_config import SiYuanConfig
@@ -82,11 +83,12 @@ class SiYuanConnector(BaseConnector):
                     "stmt": f"""
                         SELECT * FROM blocks 
                         WHERE type='d' 
-                        AND (created >= '{start_time.strftime("%Y%m%d%H%M%S")}' 
-                             OR updated >= '{start_time.strftime("%Y%m%d%H%M%S")}')
-                        AND (created <= '{end_time.strftime("%Y%m%d%H%M%S")}' 
-                             OR updated <= '{end_time.strftime("%Y%m%d%H%M%S")}')
-                        ORDER BY created DESC
+                        AND (
+                            (created >= '{start_time.strftime("%Y%m%d%H%M%S")}' AND created <= '{end_time.strftime("%Y%m%d%H%M%S")}')
+                            OR 
+                            (updated >= '{start_time.strftime("%Y%m%d%H%M%S")}' AND updated <= '{end_time.strftime("%Y%m%d%H%M%S")}')
+                        )
+                        ORDER BY updated DESC
                     """
                 },
             )
@@ -116,7 +118,7 @@ class SiYuanConnector(BaseConnector):
             tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
 
             activity = ActivityCreate(
-                user_id=None,  # Will be set by service layer
+                user_id=ctx.user_id,  # Will be set by service layer
                 source_type=SourceType.SIYUAN,
                 source_id=note_id,
                 occurred_at=occurred_at,

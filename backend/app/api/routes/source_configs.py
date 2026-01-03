@@ -7,6 +7,7 @@ from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.connectors.registry import registry
+from app.core.context import ctx
 from app.crud.source_config import source_config_crud
 from app.models import Message
 from app.models.enums import SourceType
@@ -17,7 +18,7 @@ from app.schemas.source_config import (
     SourceConfigsPublic,
     SourceConfigUpdate,
 )
-
+from loguru import logger
 router = APIRouter(prefix="/source-configs", tags=["source-configs"])
 
 
@@ -118,6 +119,7 @@ async def test_source_config_connection(
     """
     Test the connection to a configured data source.
     """
+    logger.info(f"{ctx.user_id=}")
     config = source_config_crud.get(session=session, id=id)
     if not config:
         raise HTTPException(status_code=404, detail="Source configuration not found")
@@ -125,9 +127,6 @@ async def test_source_config_connection(
     # Ensure user can only test their own configs
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    # Get the connector instance for this source type
-    connector_key = config.type.value.lower()
     
     try:
         connector = registry.get(config)

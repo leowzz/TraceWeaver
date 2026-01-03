@@ -2,9 +2,9 @@
 
 from datetime import datetime
 
-import httpx
 from fastapi import HTTPException
 from loguru import logger
+from app.clients.siyuan import SiYuanClient, SiYuanAPIError
 from app.connectors.base import BaseConnector
 from app.core.context import ctx
 from app.models.enums import SourceType
@@ -24,6 +24,16 @@ class SiYuanConnector(BaseConnector):
         """
         super().__init__(config)
         self.config: SiYuanConfig = config
+        self._client: SiYuanClient | None = None
+
+    def _get_client(self) -> SiYuanClient:
+        """Get or create SiYuan client."""
+        if self._client is None:
+            self._client = SiYuanClient(
+                api_url=str(self.config.api_url),
+                api_token=self.config.api_token,
+            )
+        return self._client
 
     @property
     def source_type(self) -> str:
@@ -39,24 +49,16 @@ class SiYuanConnector(BaseConnector):
             ValueError: If required fields are missing
             ConnectionError: If cannot connect to API
         """
-        api_url = str(self.config.api_url)
-        api_token = self.config.api_token
-
-        # Test connection
+        client = self._get_client()
         try:
-            async with httpx.AsyncClient(base_url=api_url) as client:
-                logger.debug(f"Testing SiYuan connection to {api_url}")
-                response = await client.post(
-                    "/api/system/version",
-                    headers={"Authorization": f"Token {api_token}"},
-                    timeout=5.0,
-                )
-                if response.status_code != 200:
-                    raise ConnectionError(f"API returned status {response.status_code}")
-                logger.info(f"SiYuan connection successful: {response.text}")
-                return True
-        except httpx.HTTPError as e:
-            raise ConnectionError(f"Failed to connect to SiYuan API: {e}")
+            logger.debug(f"Testing SiYuan connection to {self.config.api_url}")
+            version = await client.get_version()
+            logger.info(f"SiYuan connection successful, version: {version}")
+            return True
+        except SiYuanAPIError as e:
+            raise ConnectionError(f"SiYuan API error: {e.msg}") from e
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to SiYuan API: {e}") from e
 
     async def fetch_activities(
         self,
@@ -65,120 +67,81 @@ class SiYuanConnector(BaseConnector):
     ) -> list[ActivityCreate]:
         """Fetch full documents from SiYuan API.
 
-        Step 1: Find document IDs created/updated in the time range.
-        Step 2: Fetch all component blocks for those documents.
-        Step 3: Aggregate content.
+        Step 1: Find document IDs created/updated in the time range using SQL.
+        Step 2: For each document, use export_md_content to get full Markdown content.
+        Step 3: Get document metadata using get_block_kramdown or SQL for document block.
         """
-        api_url = str(self.config.api_url)
-        api_token = self.config.api_token
+        client = self._get_client()
 
         # Step 1: Query document IDs created or updated in the time range
-        async with httpx.AsyncClient(base_url=api_url) as client:
-            response = await client.post(
-                "/api/query/sql",
-                headers={"Authorization": f"Token {api_token}"},
-                json={
-                    "stmt": f"""
-                        SELECT id FROM blocks 
-                        WHERE type='d' 
-                        AND (
-                            (created >= '{start_time.strftime("%Y%m%d%H%M%S")}' AND created <= '{end_time.strftime("%Y%m%d%H%M%S")}')
-                            OR 
-                            (updated >= '{start_time.strftime("%Y%m%d%H%M%S")}' AND updated <= '{end_time.strftime("%Y%m%d%H%M%S")}')
-                        )
-                        ORDER BY updated DESC
-                    """
-                },
+        # Note: We still need SQL here as there's no time-range query API
+        start_str = start_time.strftime("%Y%m%d%H%M%S")
+        end_str = end_time.strftime("%Y%m%d%H%M%S")
+        
+        doc_rows = await client.query_sql(f"""
+            SELECT id, created, updated, content, box, hpath, tag, memo, alias
+            FROM blocks 
+            WHERE type='d' 
+            AND (
+                (created >= '{start_str}' AND created <= '{end_str}')
+                OR 
+                (updated >= '{start_str}' AND updated <= '{end_str}')
             )
-            response.raise_for_status()
-            doc_rows = response.json().get("data", [])
+            ORDER BY updated DESC
+        """)
 
         if not doc_rows:
             return []
 
-        doc_ids = [row["id"] for row in doc_rows]
-        doc_ids_str = ", ".join([f"'{d}'" for d in doc_ids])
-
-        # Step 2: Fetch all constituent blocks for these documents
-        async with httpx.AsyncClient(base_url=api_url) as client:
-            response = await client.post(
-                "/api/query/sql",
-                headers={"Authorization": f"Token {api_token}"},
-                json={
-                    "stmt": f"""
-                        SELECT * FROM blocks 
-                        WHERE root_id IN ({doc_ids_str})
-                        ORDER BY root_id, hpath, id
-                    """
-                },
-            )
-            response.raise_for_status()
-            all_blocks_data = response.json().get("data", [])
-
-        # Step 3: Aggregate blocks by document (root_id)
-        docs_agg: dict[str, dict] = {}
-        for block_data in all_blocks_data:
+        activities = []
+        for doc_row in doc_rows:
+            doc_id = doc_row["id"]
+            
             try:
-                block = SiYuanBlock.model_validate(block_data)
-                root_id = block.root_id
+                # Step 2: Export document as Markdown using the client API
+                export_result = await client.export_md_content(doc_id)
+                full_content = export_result.content
+                hpath = export_result.hPath
                 
-                # If it's the document block itself, initialize doc info
-                if block.type == 'd':
-                    docs_agg[block.id] = {
-                        "info": block,
-                        "markdown_parts": []
-                    }
+                # Step 3: Extract metadata from the document row
+                title = doc_row.get("content", "")[:100] or hpath.split("/")[-1] or "Untitled"
+                created_str = doc_row.get("created", "")
                 
-                # Append markdown if present, otherwise content
-                if root_id in docs_agg:
-                    content_part = block.markdown or block.content
-                    if content_part:
-                        docs_agg[root_id]["markdown_parts"].append(content_part)
+                try:
+                    occurred_at = datetime.strptime(created_str, "%Y%m%d%H%M%S")
+                except (ValueError, TypeError):
+                    occurred_at = start_time
+
+                tags_str = doc_row.get("tag", "") or ""
+                tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
+
+                activity = ActivityCreate(
+                    user_id=ctx.user_id,
+                    source_type=SourceType.SIYUAN,
+                    source_id=doc_id,
+                    occurred_at=occurred_at,
+                    title=title,
+                    content=full_content,
+                    extra_data={
+                        "notebook": doc_row.get("box", ""),
+                        "path": hpath,
+                        "tags": tags,
+                        "memo": doc_row.get("memo", ""),
+                        "alias": doc_row.get("alias", ""),
+                    },
+                    fingerprint=self.generate_fingerprint(
+                        SourceType.SIYUAN.value,
+                        doc_id,
+                        occurred_at,
+                    ),
+                )
+                activities.append(activity)
             except Exception as e:
-                logger.error(f"Failed to parse SiYuan block: {e}")
+                logger.error(f"Failed to fetch document {doc_id}: {e}")
                 continue
 
-        activities = []
-        for doc_id, doc_data in docs_agg.items():
-            doc = doc_data["info"]
-            full_content = "\n\n".join(doc_data["markdown_parts"])
-            
-            # Extract basic info from the document block
-            title = doc.content[:100]
-            created_str = doc.created
-            
-            try:
-                occurred_at = datetime.strptime(created_str, "%Y%m%d%H%M%S")
-            except (ValueError, TypeError):
-                occurred_at = start_time
-
-            tags_str = doc.tag or ""
-            tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
-
-            activity = ActivityCreate(
-                user_id=ctx.user_id,
-                source_type=SourceType.SIYUAN,
-                source_id=doc_id,
-                occurred_at=occurred_at,
-                title=title,
-                content=full_content,
-                extra_data={
-                    "notebook": doc.box,
-                    "path": doc.hpath,
-                    "tags": tags,
-                    "memo": doc.memo,
-                    "alias": doc.alias,
-                },
-                fingerprint=self.generate_fingerprint(
-                    SourceType.SIYUAN.value,
-                    doc_id,
-                    occurred_at,
-                ),
-            )
-            activities.append(activity)
-
         return activities
-    
+
     async def test_connection(self):
         try:
             await self.validate_config()

@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, Enum as SQLAEnum
+from sqlalchemy import Column, DateTime, Enum as SQLAEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
@@ -42,5 +42,5 @@ class Activity(SQLModel, table=True):
     fingerprint: str = Field(unique=True, index=True)  # SHA256 hash for deduplication
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)

@@ -29,7 +29,7 @@ async def main():
     logger.info(f"Found {len(activities)} activities.")
     for activity in activities:
         logger.info(f"- [{activity.occurred_at}] {activity.title} (ID: {activity.source_id})")
-        logger.debug(f"Content: {activity.content[:100]}...")
+        logger.debug(f"Content: {activity.content}...")
 
 if __name__ == "__main__":
     with mock_ctx(user_id=uuid.uuid4()):

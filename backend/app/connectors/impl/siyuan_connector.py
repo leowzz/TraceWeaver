@@ -10,6 +10,7 @@ from app.core.context import ctx
 from app.models.enums import SourceType
 from app.schemas.activity import ActivityCreate
 from app.schemas.source_config import SiYuanConfig
+from app.schemas.siyuan import SiYuanBlock
 
 
 class SiYuanConnector(BaseConnector):
@@ -62,26 +63,23 @@ class SiYuanConnector(BaseConnector):
         start_time: datetime,
         end_time: datetime,
     ) -> list[ActivityCreate]:
-        """Fetch notes from SiYuan API.
+        """Fetch full documents from SiYuan API.
 
-        Args:
-            start_time: Start of time range
-            end_time: End of time range
-
-        Returns:
-            List of activities representing notes
+        Step 1: Find document IDs created/updated in the time range.
+        Step 2: Fetch all component blocks for those documents.
+        Step 3: Aggregate content.
         """
         api_url = str(self.config.api_url)
         api_token = self.config.api_token
 
-        # Query notes created or updated in the time range
+        # Step 1: Query document IDs created or updated in the time range
         async with httpx.AsyncClient(base_url=api_url) as client:
             response = await client.post(
                 "/api/query/sql",
                 headers={"Authorization": f"Token {api_token}"},
                 json={
                     "stmt": f"""
-                        SELECT * FROM blocks 
+                        SELECT id FROM blocks 
                         WHERE type='d' 
                         AND (
                             (created >= '{start_time.strftime("%Y%m%d%H%M%S")}' AND created <= '{end_time.strftime("%Y%m%d%H%M%S")}')
@@ -93,45 +91,87 @@ class SiYuanConnector(BaseConnector):
                 },
             )
             response.raise_for_status()
-            notes = response.json()
+            doc_rows = response.json().get("data", [])
+
+        if not doc_rows:
+            return []
+
+        doc_ids = [row["id"] for row in doc_rows]
+        doc_ids_str = ", ".join([f"'{d}'" for d in doc_ids])
+
+        # Step 2: Fetch all constituent blocks for these documents
+        async with httpx.AsyncClient(base_url=api_url) as client:
+            response = await client.post(
+                "/api/query/sql",
+                headers={"Authorization": f"Token {api_token}"},
+                json={
+                    "stmt": f"""
+                        SELECT * FROM blocks 
+                        WHERE root_id IN ({doc_ids_str})
+                        ORDER BY root_id, hpath, id
+                    """
+                },
+            )
+            response.raise_for_status()
+            all_blocks_data = response.json().get("data", [])
+
+        # Step 3: Aggregate blocks by document (root_id)
+        docs_agg: dict[str, dict] = {}
+        for block_data in all_blocks_data:
+            try:
+                block = SiYuanBlock.model_validate(block_data)
+                root_id = block.root_id
+                
+                # If it's the document block itself, initialize doc info
+                if block.type == 'd':
+                    docs_agg[block.id] = {
+                        "info": block,
+                        "markdown_parts": []
+                    }
+                
+                # Append markdown if present, otherwise content
+                if root_id in docs_agg:
+                    content_part = block.markdown or block.content
+                    if content_part:
+                        docs_agg[root_id]["markdown_parts"].append(content_part)
+            except Exception as e:
+                logger.error(f"Failed to parse SiYuan block: {e}")
+                continue
 
         activities = []
-        for note in notes.get("data", []):
-            # Extract note details
-            note_id = note["id"]
-            title = note.get("content", "Untitled note")[
-                :100
-            ]  # First 100 chars as title
-            content = note.get("markdown", "")
-            created_str = note.get("created", "")
-
-            # Parse SiYuan timestamp format (YYYYMMDDHHmmSS)
+        for doc_id, doc_data in docs_agg.items():
+            doc = doc_data["info"]
+            full_content = "\n\n".join(doc_data["markdown_parts"])
+            
+            # Extract basic info from the document block
+            title = doc.content[:100]
+            created_str = doc.created
+            
             try:
                 occurred_at = datetime.strptime(created_str, "%Y%m%d%H%M%S")
             except (ValueError, TypeError):
                 occurred_at = start_time
 
-            # Extract metadata
-            notebook = note.get("box", "")
-            path = note.get("hpath", "")
-            tags_str = note.get("tag", "")
+            tags_str = doc.tag or ""
             tags = [tag.strip() for tag in tags_str.split(",") if tag.strip()]
 
             activity = ActivityCreate(
-                user_id=ctx.user_id,  # Will be set by service layer
+                user_id=ctx.user_id,
                 source_type=SourceType.SIYUAN,
-                source_id=note_id,
+                source_id=doc_id,
                 occurred_at=occurred_at,
                 title=title,
-                content=content,
+                content=full_content,
                 extra_data={
-                    "notebook": notebook,
-                    "path": path,
+                    "notebook": doc.box,
+                    "path": doc.hpath,
                     "tags": tags,
+                    "memo": doc.memo,
+                    "alias": doc.alias,
                 },
                 fingerprint=self.generate_fingerprint(
                     SourceType.SIYUAN.value,
-                    note_id,
+                    doc_id,
                     occurred_at,
                 ),
             )

@@ -1,3 +1,5 @@
+import uuid
+
 import jwt
 from typing import Optional
 from fastapi import Request
@@ -15,9 +17,10 @@ class ContextMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         user_id = self._extract_user_id(request)
+        trace_id = uuid.uuid4().hex[-8:]
         
         # Initialize context for the request
-        token = _ctx_var.set(CtxInfo(user_id=user_id))
+        token = _ctx_var.set(CtxInfo(user_id=user_id, trace_id=trace_id))
         try:
             response = await call_next(request)
             return response

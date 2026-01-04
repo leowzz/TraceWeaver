@@ -1,3 +1,4 @@
+from typing import Optional
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
@@ -101,6 +102,7 @@ class Settings(BaseSettings):
 
     # Celery configuration
     CELERY_WORKER_CONCURRENCY: int = 2
+    CELERY_TMP_DATA_DIR: Optional[str] = None
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":

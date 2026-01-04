@@ -1,10 +1,12 @@
 """Celery tasks for TraceWeaver."""
 
 import asyncio
+from pathlib import Path
 
 from celery.utils.log import get_task_logger
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.celery_app import celery_app
 from app.core.db import engine
 from app.crud.llm_model_config import llm_model_config_crud
@@ -144,6 +146,9 @@ async def _get_image_bytes(
             raise ValueError("Invalid connector type for SiYuan")
         client = connector._get_client()
         image_bytes = await client.get_file(f"/data/{img_path}")
+        if settings.CELERY_TMP_DATA_DIR:
+            with open(Path(settings.CELERY_TMP_DATA_DIR) / img_path.split('-')[-1], 'wb') as f:
+                f.write(image_bytes)
         return image_bytes
 
     raise ValueError(f"Unsupported source type: {source_type}")

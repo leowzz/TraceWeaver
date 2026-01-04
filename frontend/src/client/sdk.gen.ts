@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { HealthHealthResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { HealthHealthResponse, ImageAnalysesReadImageAnalysesData, ImageAnalysesReadImageAnalysesResponse, ImageAnalysesReadImageAnalysisData, ImageAnalysesReadImageAnalysisResponse, ImageAnalysesGetImageAnalysisImageData, ImageAnalysesGetImageAnalysisImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class HealthService {
     /**
@@ -15,6 +15,77 @@ export class HealthService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/health'
+        });
+    }
+}
+
+export class ImageAnalysesService {
+    /**
+     * Read Image Analyses
+     * Retrieve Image Analyses.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.status Filter by analysis status
+     * @returns ImageAnalysesPublic Successful Response
+     * @throws ApiError
+     */
+    public static readImageAnalyses(data: ImageAnalysesReadImageAnalysesData = {}): CancelablePromise<ImageAnalysesReadImageAnalysesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-analyses/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                status: data.status
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Image Analysis
+     * Get Image Analysis by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ImageAnalysisPublic Successful Response
+     * @throws ApiError
+     */
+    public static readImageAnalysis(data: ImageAnalysesReadImageAnalysisData): CancelablePromise<ImageAnalysesReadImageAnalysisResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-analyses/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Get Image Analysis Image
+     * Get the image for an Image Analysis record.
+     *
+     * Streams the image bytes from the source system.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns unknown Successful Response
+     * @throws ApiError
+     */
+    public static getImageAnalysisImage(data: ImageAnalysesGetImageAnalysisImageData): CancelablePromise<ImageAnalysesGetImageAnalysisImageResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/image-analyses/{id}/image',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
 }

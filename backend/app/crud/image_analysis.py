@@ -1,6 +1,6 @@
 """CRUD operations for Image Analysis model."""
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.crud.base import CRUDBase
 from app.models.enums import AnalysisStatus
@@ -8,22 +8,20 @@ from app.models.image_analysis import ImageAnalysis
 
 
 class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
-    """CRUD operations for Image Analysis."""
-
-    def get_by_status(
-        self, session: Session, status: AnalysisStatus
+    def get_multi(
+        self, session: Session, *, skip: int = 0, limit: int = 100, status: AnalysisStatus | None = None
     ) -> list[ImageAnalysis]:
-        """Get all image analyses by status.
-
-        Args:
-            session: Database session
-            status: Analysis status
-
-        Returns:
-            List of image analyses with the specified status
-        """
-        statement = select(ImageAnalysis).where(ImageAnalysis.status == status)
+        statement = select(ImageAnalysis)
+        if status:
+            statement = statement.where(ImageAnalysis.status == status)
+        statement = statement.offset(skip).limit(limit).order_by(ImageAnalysis.created_at.desc())
         return list(session.exec(statement).all())
+
+    def count(self, session: Session, status: AnalysisStatus | None = None) -> int:
+        statement = select(func.count()).select_from(ImageAnalysis)
+        if status:
+            statement = statement.where(ImageAnalysis.status == status)
+        return session.exec(statement).one()
     
     def get_by_img_path_status(
         self, session: Session, img_path: str, status: AnalysisStatus

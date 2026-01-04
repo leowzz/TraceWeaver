@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutLlmPromptsRouteImport } from './routes/_layout/llm-prompts'
 import { Route as LayoutLlmModelsRouteImport } from './routes/_layout/llm-models'
+import { Route as LayoutImageAnalysesRouteImport } from './routes/_layout/image-analyses'
 import { Route as LayoutDatasourcesRouteImport } from './routes/_layout/datasources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
@@ -65,6 +66,11 @@ const LayoutLlmModelsRoute = LayoutLlmModelsRouteImport.update({
   path: '/llm-models',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutImageAnalysesRoute = LayoutImageAnalysesRouteImport.update({
+  id: '/image-analyses',
+  path: '/image-analyses',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutDatasourcesRoute = LayoutDatasourcesRouteImport.update({
   id: '/datasources',
   path: '/datasources',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
+  '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRoute
   '/settings': typeof LayoutSettingsRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
+  '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRoute
   '/settings': typeof LayoutSettingsRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/datasources': typeof LayoutDatasourcesRoute
+  '/_layout/image-analyses': typeof LayoutImageAnalysesRoute
   '/_layout/llm-models': typeof LayoutLlmModelsRoute
   '/_layout/llm-prompts': typeof LayoutLlmPromptsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
+    | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
     | '/settings'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
+    | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
     | '/settings'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/datasources'
+    | '/_layout/image-analyses'
     | '/_layout/llm-models'
     | '/_layout/llm-prompts'
     | '/_layout/settings'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutLlmModelsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/image-analyses': {
+      id: '/_layout/image-analyses'
+      path: '/image-analyses'
+      fullPath: '/image-analyses'
+      preLoaderRoute: typeof LayoutImageAnalysesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/datasources': {
       id: '/_layout/datasources'
       path: '/datasources'
@@ -247,6 +266,7 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutDatasourcesRoute: typeof LayoutDatasourcesRoute
+  LayoutImageAnalysesRoute: typeof LayoutImageAnalysesRoute
   LayoutLlmModelsRoute: typeof LayoutLlmModelsRoute
   LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
@@ -256,6 +276,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutDatasourcesRoute: LayoutDatasourcesRoute,
+  LayoutImageAnalysesRoute: LayoutImageAnalysesRoute,
   LayoutLlmModelsRoute: LayoutLlmModelsRoute,
   LayoutLlmPromptsRoute: LayoutLlmPromptsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,

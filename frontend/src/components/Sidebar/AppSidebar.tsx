@@ -1,4 +1,4 @@
-import { Bot, Database, Home, MessageSquare, Users } from "lucide-react"
+import { Bot, Database, Home, ImagePlus, MessageSquare, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -16,6 +16,7 @@ const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
   { icon: Bot, title: "LLM Models", path: "/llm-models" },
   { icon: MessageSquare, title: "LLM Prompts", path: "/llm-prompts" },
+  { icon: ImagePlus, title: "Image Analyses", path: "/image-analyses" },
   { icon: Database, title: "Data Sources", path: "/datasources" },
 ]
 

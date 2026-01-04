@@ -10,7 +10,6 @@ from app.core.context import ctx
 from app.models.enums import SourceType
 from app.schemas.activity import ActivityCreate
 from app.schemas.source_config import SiYuanConfig
-from app.schemas.siyuan import SiYuanBlock
 
 
 class SiYuanConnector(BaseConnector):

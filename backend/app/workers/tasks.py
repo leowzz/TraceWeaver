@@ -55,6 +55,7 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
     source_type = task.source_type
     llm_prompt_id = task.llm_prompt_id
     model_name = task.model_name
+    extra_data = task.extra_data
 
     # Create database record
     with Session(engine) as session:
@@ -71,6 +72,7 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
             llm_prompt_id=llm_prompt_id,
             model_name=model_name,
             status=AnalysisStatus.PENDING,
+            extra_data=extra_data
         )
         session.add(analysis_record)
         session.commit()

@@ -1,26 +1,29 @@
-"""LLM Image Analysis Worker - Processes image analysis tasks from Redis queue."""
+"""Celery tasks for TraceWeaver."""
 
 import asyncio
-from pathlib import Path
 
-from loguru import logger
+from celery.utils.log import get_task_logger
 from sqlmodel import Session, select
 
+from app.core.celery_app import celery_app
 from app.core.db import engine
-from app.core.queue import dequeue_image_analysis_task
-from app.crud.image_analysis import image_analysis_crud
 from app.crud.llm_model_config import llm_model_config_crud
 from app.crud.llm_prompt import llm_prompt_crud
 from app.models.enums import AnalysisStatus, ImageSourceType, SourceType
 from app.models.image_analysis import ImageAnalysis
+from app.models.source_config import SourceConfig
 from app.schemas.llm import ImageAnalysisTaskData
 from app.clients.llm.client import LLMClient, LLMClientError
 from app.connectors import registry
-from app.models.source_config import SourceConfig
+
+logger = get_task_logger(__name__)
 
 
-async def process_image_analysis_task(task_data: dict) -> None:
+@celery_app.task(bind=True, max_retries=3, default_retry_delay=60)
+def process_image_analysis(self, task_data: dict) -> dict:
     """Process a single image analysis task.
+
+    This is a Celery task that wraps the async processing logic.
 
     Args:
         task_data: Task data dictionary containing:
@@ -28,7 +31,16 @@ async def process_image_analysis_task(task_data: dict) -> None:
             - source_type: Source type (e.g., "SIYUAN_LOCAL")
             - llm_prompt_id: LLM prompt template ID
             - model_name: LLM model name/ID
+
+    Returns:
+        dict with analysis_id and status
     """
+    # Run async code in sync context
+    return asyncio.run(_process_image_analysis_async(task_data))
+
+
+async def _process_image_analysis_async(task_data: dict) -> dict:
+    """Async implementation of image analysis processing."""
     # Validate task data using schema
     try:
         task = ImageAnalysisTaskData.model_validate(task_data)
@@ -74,6 +86,7 @@ async def process_image_analysis_task(task_data: dict) -> None:
 
             # Get model configuration
             model_config = llm_model_config_crud.get_by_model_name(session, model_name)
+            logger.info(f"{model_config=}")
             if not model_config:
                 raise ValueError(f"LLM model config for '{model_name}' not found")
             if not model_config.is_active:
@@ -94,6 +107,8 @@ async def process_image_analysis_task(task_data: dict) -> None:
                 f"Successfully analyzed image {img_path} (analysis_id: {analysis_id})"
             )
 
+            return {"analysis_id": analysis_id, "status": "completed"}
+
         except Exception as e:
             logger.error(f"Failed to analyze image {img_path}: {e}", exc_info=True)
             # Update record with error
@@ -102,28 +117,17 @@ async def process_image_analysis_task(task_data: dict) -> None:
             session.add(analysis_record)
             session.commit()
 
+            return {"analysis_id": analysis_id, "status": "failed", "error": str(e)}
+
 
 async def _get_image_bytes(
     session: Session, source_type: ImageSourceType, img_path: str
 ) -> bytes:
-    """Get image bytes from the source system.
-
-    Args:
-        session: Database session
-        source_type: Source type
-        img_path: Image path
-
-    Returns:
-        Image bytes
-
-    Raises:
-        ValueError: If source type is not supported or connector not found
-    """
+    """Get image bytes from the source system."""
     if source_type != ImageSourceType.SIYUAN_LOCAL:
         raise ValueError(f"Image fetching from {source_type} is not yet supported")
 
-    # Get source config for SiYuan (for now, get the first active one)
-    # In the future, this could be passed in the task data
+    # Get source config for SiYuan
     statement = select(SourceConfig).where(
         SourceConfig.type == SourceType.SIYUAN, SourceConfig.is_active == True
     )
@@ -139,7 +143,7 @@ async def _get_image_bytes(
         if not isinstance(connector, SiYuanConnector):
             raise ValueError("Invalid connector type for SiYuan")
         client = connector._get_client()
-        image_bytes = await client.get_file(img_path)
+        image_bytes = await client.get_file(f"/data/{img_path}")
         return image_bytes
 
     raise ValueError(f"Unsupported source type: {source_type}")
@@ -148,23 +152,9 @@ async def _get_image_bytes(
 async def _analyze_image_with_llm_client(
     image_bytes: bytes, prompt_content: str, model_config
 ) -> str:
-    """Analyze image using LLM client (via agno framework).
-
-    Args:
-        image_bytes: Image bytes data
-        prompt_content: Prompt template content
-        model_config: LLM model configuration from database
-
-    Returns:
-        Analysis result text
-
-    Raises:
-        LLMClientError: If LLM client request fails
-        ValueError: If model configuration is invalid
-    """
+    """Analyze image using LLM client."""
     client = None
     try:
-        # Create LLM client from model config
         client = LLMClient(
             provider=model_config.provider,
             model_id=model_config.model_id,
@@ -172,8 +162,8 @@ async def _analyze_image_with_llm_client(
             api_key=model_config.api_key,
             config=model_config.config or {},
         )
+        logger.info(f"{len(image_bytes)=}")
 
-        # Analyze image using multimodal capabilities
         response = await client.analyze_image(image_bytes, prompt_content)
         return response.content
 
@@ -184,30 +174,5 @@ async def _analyze_image_with_llm_client(
         logger.error(f"Failed to analyze image with LLM: {e}", exc_info=True)
         raise ValueError(f"LLM analysis failed: {e}") from e
     finally:
-        # Cleanup client if needed
         if client is not None:
             await client.close()
-
-
-async def worker_loop() -> None:
-    """Main worker loop - continuously process tasks from queue."""
-    logger.info("LLM Image Analysis Worker started")
-    while True:
-        try:
-            task_data = dequeue_image_analysis_task(timeout=1)
-            if task_data:
-                await process_image_analysis_task(task_data)
-            else:
-                # No task available, wait a bit before checking again
-                await asyncio.sleep(0.1)
-        except KeyboardInterrupt:
-            logger.info("Worker interrupted, shutting down...")
-            break
-        except Exception as e:
-            logger.error(f"Error in worker loop: {e}", exc_info=True)
-            await asyncio.sleep(1)  # Wait before retrying
-
-
-if __name__ == "__main__":
-    asyncio.run(worker_loop())
-

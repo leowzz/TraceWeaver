@@ -33,6 +33,9 @@ sentry = [
 vlm = [
     "ollama>=0.6.1",
     "agno>=2.3.21",
+    "celery[redis]>=5.4.0",
+    "flower>=2.0.1",
+    "openai>=2.14.0",
 ]
 
 

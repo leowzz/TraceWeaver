@@ -1,36 +1,27 @@
 """Image analysis service - Task submission and management."""
+from app.models import SourceType
+from app.models.enums import ImageSourceType
+from app.schemas.llm import ImageAnalysisTaskData
+from app.workers.tasks import process_image_analysis
 
-from app.core.queue import enqueue_image_analysis_task
-from app.models.enums import SourceType
 
-
-def submit_image_analysis_task(
-    img_path: str,
-    source_type: SourceType,
-    llm_prompt_id: int,
-    model_name: str = "qwen3-vl:2B",
-) -> None:
-    """Submit an image analysis task to the queue.
+def submit_image_analysis_task(task_data: ImageAnalysisTaskData) -> str:
+    """Submit an image analysis task to Celery.
 
     Args:
-        img_path: Image path from the source system
-        source_type: Source type (SIYUAN, GIT, DAYFLOW)
-        llm_prompt_id: LLM prompt template ID
-        model_name: LLM model name to use (default: "qwen3-vl:2B")
+        task_data: Image analysis task data
 
-    Raises:
-        ValueError: If required parameters are invalid
+    Returns:
+        Celery task ID
     """
-    if not img_path:
-        raise ValueError("img_path cannot be empty")
-    if not llm_prompt_id:
-        raise ValueError("llm_prompt_id cannot be empty")
+    # Submit task to Celery
+    result = process_image_analysis.delay(task_data.model_dump())
+    return result.id
 
-    task_data = {
-        "img_path": img_path,
-        "source_type": source_type.value if isinstance(source_type, SourceType) else source_type,
-        "llm_prompt_id": llm_prompt_id,
-        "model_name": model_name,
-    }
-
-    enqueue_image_analysis_task(task_data)
+if __name__ == "__main__":
+    submit_image_analysis_task(ImageAnalysisTaskData(
+        img_path="assets/image-20251219112035-5zqm3ln.png",
+        source_type=ImageSourceType.SIYUAN_LOCAL,
+        llm_prompt_id=1,
+        model_name="qwen3-vl:2b"
+    ))

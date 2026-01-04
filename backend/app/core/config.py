@@ -99,6 +99,9 @@ class Settings(BaseSettings):
     # Redis configuration
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # Celery configuration
+    CELERY_WORKER_CONCURRENCY: int = 2
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

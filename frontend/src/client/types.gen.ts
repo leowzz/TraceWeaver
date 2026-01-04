@@ -253,6 +253,24 @@ export type PrivateUserCreate = {
 };
 
 /**
+ * Request body for SiYuan SQL execution.
+ */
+export type SiYuanSQLRequest = {
+    stmt: string;
+};
+
+/**
+ * Response for SiYuan SQL execution.
+ */
+export type SiYuanSQLResponse = {
+    success: boolean;
+    data?: (Array<{
+    [key: string]: unknown;
+}> | null);
+    error?: (string | null);
+};
+
+/**
  * Schema for creating a new source configuration.
  */
 export type SourceConfigCreate = {
@@ -378,6 +396,12 @@ export type ValidationError = {
     msg: string;
     type: string;
 };
+
+export type DebugExecuteSiyuanSqlData = {
+    requestBody: SiYuanSQLRequest;
+};
+
+export type DebugExecuteSiyuanSqlResponse = (SiYuanSQLResponse);
 
 export type HealthHealthResponse = (unknown);
 

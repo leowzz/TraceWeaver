@@ -1,4 +1,4 @@
-import { Bot, Database, Home, ImagePlus, MessageSquare, Users } from "lucide-react"
+import { Bot, Database, Home, ImagePlus, MessageSquare, Terminal, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -20,11 +20,16 @@ const baseItems: Item[] = [
   { icon: Database, title: "Data Sources", path: "/datasources" },
 ]
 
+const adminItems: Item[] = [
+  { icon: Users, title: "Admin", path: "/admin" },
+  { icon: Terminal, title: "Debug SQL", path: "/debug-siyuan-sql" },
+]
+
 export function AppSidebar() {
   const { user: currentUser } = useAuth()
 
   const items = currentUser?.is_superuser
-    ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
+    ? [...baseItems, ...adminItems]
     : baseItems
 
   return (

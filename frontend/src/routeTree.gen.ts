@@ -19,6 +19,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutLlmPromptsRouteImport } from './routes/_layout/llm-prompts'
 import { Route as LayoutLlmModelsRouteImport } from './routes/_layout/llm-models'
 import { Route as LayoutImageAnalysesRouteImport } from './routes/_layout/image-analyses'
+import { Route as LayoutDebugSiyuanSqlRouteImport } from './routes/_layout/debug-siyuan-sql'
 import { Route as LayoutDatasourcesRouteImport } from './routes/_layout/datasources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
@@ -71,6 +72,11 @@ const LayoutImageAnalysesRoute = LayoutImageAnalysesRouteImport.update({
   path: '/image-analyses',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutDebugSiyuanSqlRoute = LayoutDebugSiyuanSqlRouteImport.update({
+  id: '/debug-siyuan-sql',
+  path: '/debug-siyuan-sql',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutDatasourcesRoute = LayoutDatasourcesRouteImport.update({
   id: '/datasources',
   path: '/datasources',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
+  '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
+  '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/datasources': typeof LayoutDatasourcesRoute
+  '/_layout/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/_layout/image-analyses': typeof LayoutImageAnalysesRoute
   '/_layout/llm-models': typeof LayoutLlmModelsRoute
   '/_layout/llm-prompts': typeof LayoutLlmPromptsRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
+    | '/debug-siyuan-sql'
     | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/admin'
     | '/datasources'
+    | '/debug-siyuan-sql'
     | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_layout/admin'
     | '/_layout/datasources'
+    | '/_layout/debug-siyuan-sql'
     | '/_layout/image-analyses'
     | '/_layout/llm-models'
     | '/_layout/llm-prompts'
@@ -246,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutImageAnalysesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/debug-siyuan-sql': {
+      id: '/_layout/debug-siyuan-sql'
+      path: '/debug-siyuan-sql'
+      fullPath: '/debug-siyuan-sql'
+      preLoaderRoute: typeof LayoutDebugSiyuanSqlRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/datasources': {
       id: '/_layout/datasources'
       path: '/datasources'
@@ -266,6 +285,7 @@ declare module '@tanstack/react-router' {
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutDatasourcesRoute: typeof LayoutDatasourcesRoute
+  LayoutDebugSiyuanSqlRoute: typeof LayoutDebugSiyuanSqlRoute
   LayoutImageAnalysesRoute: typeof LayoutImageAnalysesRoute
   LayoutLlmModelsRoute: typeof LayoutLlmModelsRoute
   LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRoute
@@ -276,6 +296,7 @@ interface LayoutRouteChildren {
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutDatasourcesRoute: LayoutDatasourcesRoute,
+  LayoutDebugSiyuanSqlRoute: LayoutDebugSiyuanSqlRoute,
   LayoutImageAnalysesRoute: LayoutImageAnalysesRoute,
   LayoutLlmModelsRoute: LayoutLlmModelsRoute,
   LayoutLlmPromptsRoute: LayoutLlmPromptsRoute,

@@ -1,5 +1,6 @@
 """Celery tasks for TraceWeaver."""
 
+from app.crud.image_analysis import image_analysis_crud
 import asyncio
 from pathlib import Path
 
@@ -57,6 +58,12 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
 
     # Create database record
     with Session(engine) as session:
+        if exist_completed := image_analysis_crud.get_by_img_path_status(
+                session, img_path=img_path, status=AnalysisStatus.COMPLETED
+        ):
+            logger.info(f"{img_path=}. exist: {[i.id for i in exist_completed]}")
+            return {"analysis_id": exist_completed[0].id, "status": "completed"}
+
         # Create pending record
         analysis_record = ImageAnalysis(
             img_path=img_path,
@@ -123,7 +130,7 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
 
 
 async def _get_image_bytes(
-    session: Session, source_type: ImageSourceType, img_path: str
+        session: Session, source_type: ImageSourceType, img_path: str
 ) -> bytes:
     """Get image bytes from the source system."""
     if source_type != ImageSourceType.SIYUAN_LOCAL:
@@ -155,7 +162,7 @@ async def _get_image_bytes(
 
 
 async def _analyze_image_with_llm_client(
-    image_bytes: bytes, prompt_content: str, model_config
+        image_bytes: bytes, prompt_content: str, model_config
 ) -> str:
     """Analyze image using LLM client."""
     client = None

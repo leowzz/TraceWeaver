@@ -24,6 +24,24 @@ class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
         """
         statement = select(ImageAnalysis).where(ImageAnalysis.status == status)
         return list(session.exec(statement).all())
+    
+    def get_by_img_path_status(
+        self, session: Session, img_path: str, status: AnalysisStatus
+    ) -> list[ImageAnalysis]:
+        """Get all image analyses by image path and status.
+
+        Args:
+            session: Database session
+            img_path: Image path
+            status: Analysis status
+
+        Returns:
+            List of image analyses with the specified image path and status
+        """
+        statement = select(ImageAnalysis).where(
+            ImageAnalysis.img_path == img_path, ImageAnalysis.status == status
+        )
+        return list(session.exec(statement).all())
 
 
 image_analysis_crud = ImageAnalysisCRUD(ImageAnalysis)

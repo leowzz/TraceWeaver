@@ -34,17 +34,17 @@ async def main():
     activities = await connector.fetch_activities(start_time, end_time)
 
     logger.info(f"Found {len(activities)} activities.")
-    img_paths = []
+    img_paths = ['assets/image-20251219112035-5zqm3ln.png']
     for activity in activities:
         if any(exclude_str in activity.title for exclude_str in ('MacOS', '2025-12-26')):
             continue
         logger.info(f"- [{activity.occurred_at}] {activity.title} (ID: {activity.source_id})")
         # logger.debug(f"Content: {activity.content}...")
-        
+
         # Extract image paths from content
         paths = IMG_PATH_PATTERN.findall(activity.content or "")
         img_paths.extend(paths)
-    
+
     logger.info(f"Found {len(img_paths)} images: {img_paths}")
     for img_path in img_paths:
         from app.services.image_analysis_service import submit_image_analysis_task
@@ -61,4 +61,3 @@ async def main():
 if __name__ == "__main__":
     with mock_ctx(user_id=uuid.uuid4()):
         asyncio.run(main())
-

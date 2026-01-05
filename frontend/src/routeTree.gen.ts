@@ -22,6 +22,7 @@ import { Route as LayoutImageAnalysesRouteImport } from './routes/_layout/image-
 import { Route as LayoutDebugSiyuanSqlRouteImport } from './routes/_layout/debug-siyuan-sql'
 import { Route as LayoutDatasourcesRouteImport } from './routes/_layout/datasources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutLlmPromptsIdRouteImport } from './routes/_layout/llm-prompts.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -87,6 +88,11 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutLlmPromptsIdRoute = LayoutLlmPromptsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => LayoutLlmPromptsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
@@ -98,9 +104,10 @@ export interface FileRoutesByFullPath {
   '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
-  '/llm-prompts': typeof LayoutLlmPromptsRoute
+  '/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/llm-prompts/$id': typeof LayoutLlmPromptsIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -112,9 +119,10 @@ export interface FileRoutesByTo {
   '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
-  '/llm-prompts': typeof LayoutLlmPromptsRoute
+  '/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
   '/settings': typeof LayoutSettingsRoute
   '/': typeof LayoutIndexRoute
+  '/llm-prompts/$id': typeof LayoutLlmPromptsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -128,9 +136,10 @@ export interface FileRoutesById {
   '/_layout/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
   '/_layout/image-analyses': typeof LayoutImageAnalysesRoute
   '/_layout/llm-models': typeof LayoutLlmModelsRoute
-  '/_layout/llm-prompts': typeof LayoutLlmPromptsRoute
+  '/_layout/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/llm-prompts/$id': typeof LayoutLlmPromptsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/llm-prompts'
     | '/settings'
     | '/'
+    | '/llm-prompts/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/llm-prompts'
     | '/settings'
     | '/'
+    | '/llm-prompts/$id'
   id:
     | '__root__'
     | '/_layout'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_layout/llm-prompts'
     | '/_layout/settings'
     | '/_layout/'
+    | '/_layout/llm-prompts/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -279,8 +291,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/llm-prompts/$id': {
+      id: '/_layout/llm-prompts/$id'
+      path: '/$id'
+      fullPath: '/llm-prompts/$id'
+      preLoaderRoute: typeof LayoutLlmPromptsIdRouteImport
+      parentRoute: typeof LayoutLlmPromptsRoute
+    }
   }
 }
+
+interface LayoutLlmPromptsRouteChildren {
+  LayoutLlmPromptsIdRoute: typeof LayoutLlmPromptsIdRoute
+}
+
+const LayoutLlmPromptsRouteChildren: LayoutLlmPromptsRouteChildren = {
+  LayoutLlmPromptsIdRoute: LayoutLlmPromptsIdRoute,
+}
+
+const LayoutLlmPromptsRouteWithChildren =
+  LayoutLlmPromptsRoute._addFileChildren(LayoutLlmPromptsRouteChildren)
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
@@ -288,7 +318,7 @@ interface LayoutRouteChildren {
   LayoutDebugSiyuanSqlRoute: typeof LayoutDebugSiyuanSqlRoute
   LayoutImageAnalysesRoute: typeof LayoutImageAnalysesRoute
   LayoutLlmModelsRoute: typeof LayoutLlmModelsRoute
-  LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRoute
+  LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRouteWithChildren
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
@@ -299,7 +329,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutDebugSiyuanSqlRoute: LayoutDebugSiyuanSqlRoute,
   LayoutImageAnalysesRoute: LayoutImageAnalysesRoute,
   LayoutLlmModelsRoute: LayoutLlmModelsRoute,
-  LayoutLlmPromptsRoute: LayoutLlmPromptsRoute,
+  LayoutLlmPromptsRoute: LayoutLlmPromptsRouteWithChildren,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }

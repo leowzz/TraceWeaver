@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useMatch } from "@tanstack/react-router"
 import { Suspense } from "react"
 
 import { LlmPromptsService } from "@/client"
@@ -16,7 +16,7 @@ function getLLMPromptsQueryOptions() {
 }
 
 export const Route = createFileRoute("/_layout/llm-prompts")({
-    component: LLMPrompts,
+    component: LLMPromptsLayout,
     head: () => ({
         meta: [
             {
@@ -40,7 +40,19 @@ function LLMPromptsTable() {
     )
 }
 
-function LLMPrompts() {
+function LLMPromptsLayout() {
+    // Check if we're on a child route (e.g., /llm-prompts/1)
+    const childMatch = useMatch({
+        from: "/_layout/llm-prompts/$id",
+        shouldThrow: false,
+    })
+
+    // If on child route, render Outlet (child content)
+    if (childMatch) {
+        return <Outlet />
+    }
+
+    // Otherwise render the list page
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
@@ -56,3 +68,4 @@ function LLMPrompts() {
         </div>
     )
 }
+

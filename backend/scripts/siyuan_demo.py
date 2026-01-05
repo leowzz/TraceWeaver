@@ -78,14 +78,14 @@ async def process_all_siyuan_img():
     logger.info(f"{len(block_datas)=}. {block_datas[0]}")
 
     img_paths = []
-    for b_data in block_datas[:10]:
+    for b_data in block_datas[:1000000]:
         # Extract image paths from content
         paths = IMG_PATH_PATTERN.findall(b_data.markdown or "")
         for img_p in paths:
             submit_image_analysis_task(ImageAnalysisTaskData(
                 img_path=img_p,
                 source_type=ImageSourceType.SIYUAN_LOCAL,
-                llm_prompt_id=1,
+                llm_prompt_id=2,
                 model_name="qwen3-vl:2b",
                 extra_data=b_data.model_dump()
             ))

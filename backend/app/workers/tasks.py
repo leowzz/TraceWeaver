@@ -59,8 +59,8 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
 
     # Create database record
     with Session(engine) as session:
-        if exist_completed := image_analysis_crud.get_by_img_path_status(
-                session, img_path=img_path, status=AnalysisStatus.COMPLETED
+        if exist_completed := image_analysis_crud.get_by_img_path_status_prompt_id(
+                session, img_path=img_path, status=AnalysisStatus.COMPLETED, llm_prompt_id=llm_prompt_id
         ):
             logger.info(f"{img_path=}. exist: {[i.id for i in exist_completed]}")
             return {"analysis_id": exist_completed[0].id, "status": "completed"}

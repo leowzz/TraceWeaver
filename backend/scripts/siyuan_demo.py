@@ -73,12 +73,12 @@ async def process_all_siyuan_img():
     logger.info(f"Using config: {config.name} ({config.type})")
     connector: SiYuanConnector = registry.get(config)
     siyuan_client = connector._get_client()
-    query_result = await siyuan_client.query_sql("SELECT * FROM blocks where markdown like '%![image](assets%' limit 10")
+    query_result = await siyuan_client.query_sql("SELECT * FROM blocks where markdown like '%![image](assets%' limit 10000")
     block_datas: list[BlockSchema] = [BlockSchema.model_validate(qr) for qr in query_result]
-    logger.info(f"{block_datas[0]}")
+    logger.info(f"{len(block_datas)=}. {block_datas[0]}")
 
-    img_paths = ['assets/image-20251219112035-5zqm3ln.png']
-    for b_data in block_datas:
+    img_paths = []
+    for b_data in block_datas[:10]:
         # Extract image paths from content
         paths = IMG_PATH_PATTERN.findall(b_data.markdown or "")
         for img_p in paths:

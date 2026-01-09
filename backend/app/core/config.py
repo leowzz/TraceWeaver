@@ -16,7 +16,7 @@ from pydantic import (
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 from typing_extensions import Self
-
+from loguru import logger
 
 def parse_cors(v: Any) -> list[str] | str:
     if isinstance(v, str) and not v.startswith("["):
@@ -107,6 +107,7 @@ class YamlConfigSettingsSource(PydanticBaseSettingsSource):
         config_path = Path(__file__).parent.parent.parent / "config.yaml"
         
         if not config_path.exists():
+            logger.error(f"Config file not found: {config_path}")
             return {}
         
         try:

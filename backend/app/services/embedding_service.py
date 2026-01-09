@@ -1,6 +1,5 @@
 """Embedding service for vectorizing activities using Agno framework."""
 
-from typing import Optional
 from uuid import UUID
 
 from agno.knowledge.embedder.ollama import OllamaEmbedder
@@ -15,14 +14,14 @@ from app.services.chunkers.time_block_chunker import TimeBlockChunker
 
 class EmbeddingService:
     """Service for embedding activities into vectors.
-    
+
     Uses Agno framework to support multiple embedding providers.
     """
-    
+
     def __init__(self):
         """Initialize embedding service with configured embedder."""
         self.chunker = TimeBlockChunker()
-        
+
         # Create embedder based on configuration
         if settings.EMBEDDER_PROVIDER == "ollama":
             self.embedder = OllamaEmbedder(
@@ -32,12 +31,12 @@ class EmbeddingService:
             )
         else:
             raise ValueError(f"Unsupported embedder provider: {settings.EMBEDDER_PROVIDER}")
-        
+
         logger.info(
             f"Initialized EmbeddingService with {settings.EMBEDDER_PROVIDER} "
             f"({settings.EMBEDDER_MODEL_NAME})"
         )
-    
+
     def embed_activity(
         self,
         activity: Activity,
@@ -45,18 +44,18 @@ class EmbeddingService:
         session: Session,
     ) -> list[ActivityEmbedding]:
         """Embed a single activity into vector chunks.
-        
+
         Args:
             activity: Activity to embed
             user_id: User ID for data isolation
             session: Database session
-            
+
         Returns:
             List of ActivityEmbedding records created
         """
         # Extract detailed_summary for chunking
         detailed_summary = activity.extra_data.get("detailed_summary", "")
-        
+
         # Prepare metadata for chunks
         chunk_metadata = {
             "day": activity.extra_data.get("day"),
@@ -64,7 +63,7 @@ class EmbeddingService:
             "category": activity.extra_data.get("category"),
             "subcategory": activity.extra_data.get("subcategory"),
         }
-        
+
         # Chunk the text
         if detailed_summary:
             chunks = self.chunker.chunk(detailed_summary, metadata=chunk_metadata)
@@ -76,24 +75,31 @@ class EmbeddingService:
                 index=0,
                 metadata=chunk_metadata
             )]
-        
+
         if not chunks:
             logger.warning(f"No chunks generated for activity {activity.id}")
             return []
-        
+
         # Prepare texts for batch embedding
         chunk_texts = [chunk.text for chunk in chunks]
-        
+
         # Get embeddings from Agno
         try:
-            embeddings = self.embedder.get_embeddings(chunk_texts)
+            # Agno embedders use the embed() method for single text
+            embeddings = []
+            for text in chunk_texts:
+                embedding = self.embedder.get_embedding(text)
+                embeddings.append(embedding)
         except Exception as e:
-            logger.error(f"Failed to embed activity {activity.id}: {e}")
+            logger.exception(f"Failed to embed activity {activity.id}: {e=}")
             raise
-        
+
         # Create ActivityEmbedding records
         embedding_records = []
-        for chunk, embedding_vector in zip(chunks, embeddings):
+        for chunk, embedding_vector in zip(chunks, embeddings, strict=True):
+            if not embedding_vector:
+                logger.error(f"{chunk=}, {embedding_vector=}")
+                continue
             record = ActivityEmbedding(
                 activity_id=activity.id,
                 user_id=user_id,
@@ -106,39 +112,39 @@ class EmbeddingService:
             )
             session.add(record)
             embedding_records.append(record)
-        
+
         logger.info(
             f"Created {len(embedding_records)} embeddings for activity {activity.id}"
         )
-        
+
         return embedding_records
-    
+
     def embed_activities_batch(
         self,
         activities: list[Activity],
         user_id: UUID,
         session: Session,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> int:
         """Embed multiple activities in batches.
-        
+
         Args:
             activities: List of activities to embed
             user_id: User ID for data isolation
             session: Database session
             batch_size: Batch size for committing (default: 10)
-            
+
         Returns:
             Number of activities successfully embedded
         """
         batch_size = batch_size or 10
         success_count = 0
-        
+
         for i, activity in enumerate(activities):
             try:
                 self.embed_activity(activity, user_id, session)
                 success_count += 1
-                
+
                 # Commit in batches
                 if (i + 1) % batch_size == 0:
                     session.commit()
@@ -150,13 +156,13 @@ class EmbeddingService:
                 )
                 session.rollback()
                 continue
-        
+
         # Commit remaining
         if success_count % batch_size != 0:
             session.commit()
-        
+
         logger.info(
             f"Batch embedding completed: {success_count}/{len(activities)} activities embedded"
         )
-        
+
         return success_count

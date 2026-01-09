@@ -95,36 +95,52 @@ def main():
         logger.warning("No activities found in database")
         return
     
-    # Save activities to database
+    # Save activities to database with batch validation
     with Session(engine) as session:
-        activities = []
-        
+        # Set user_id for all activities
         for activity_create in activity_creates:
-            # Set user_id
             activity_create.user_id = user_id
-            
-            # Check if activity already exists (by fingerprint)
-            existing = session.exec(
-                select(Activity).where(Activity.fingerprint == activity_create.fingerprint)
-            ).first()
-            
-            if existing:
-                logger.debug(f"Activity already exists: {existing.id}")
-                activities.append(existing)
-                continue
-            
-            # Create new activity
+        
+        # Batch query: get all existing fingerprints
+        fingerprints = [ac.fingerprint for ac in activity_creates]
+        existing_activities = session.exec(
+            select(Activity).where(Activity.fingerprint.in_(fingerprints))
+        ).all()
+        
+        # Build a set of existing fingerprints for fast lookup
+        existing_fingerprints = {act.fingerprint for act in existing_activities}
+        
+        # Separate new activities from existing ones
+        new_activity_creates = [
+            ac for ac in activity_creates 
+            if ac.fingerprint not in existing_fingerprints
+        ]
+        
+        logger.info(
+            f"Found {len(existing_activities)} existing activities, "
+            f"{len(new_activity_creates)} new activities to create"
+        )
+        
+        # Batch create new activities
+        new_activities = []
+        for activity_create in new_activity_creates:
             activity = Activity.model_validate(activity_create)
             session.add(activity)
-            activities.append(activity)
+            new_activities.append(activity)
         
         session.commit()
         
-        # Refresh to get IDs
-        for activity in activities:
+        # Refresh to get IDs for new activities
+        for activity in new_activities:
             session.refresh(activity)
         
-        logger.info(f"Saved {len(activities)} activities to database")
+        # Combine existing and new activities
+        activities = list(existing_activities) + new_activities
+        
+        logger.info(
+            f"Saved {len(new_activities)} new activities to database "
+            f"(total: {len(activities)} activities)"
+        )
     
     # Initialize embedding service
     logger.info("Initializing embedding service...")

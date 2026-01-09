@@ -1191,3 +1191,117 @@ export const ValidationErrorSchema = {
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
 } as const;
+
+export const VectorSearchRequestSchema = {
+    properties: {
+        query: {
+            type: 'string',
+            title: 'Query'
+        },
+        top_k: {
+            type: 'integer',
+            maximum: 50,
+            minimum: 1,
+            title: 'Top K',
+            default: 5
+        },
+        min_similarity: {
+            type: 'number',
+            maximum: 1,
+            minimum: 0,
+            title: 'Min Similarity',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: ['query'],
+    title: 'VectorSearchRequest',
+    description: 'Request body for vector search.'
+} as const;
+
+export const VectorSearchResponseSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        query: {
+            type: 'string',
+            title: 'Query'
+        },
+        results: {
+            anyOf: [
+                {
+                    items: {
+                        '$ref': '#/components/schemas/VectorSearchResult'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Results'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error'
+        },
+        query_embedding_dimensions: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Query Embedding Dimensions'
+        }
+    },
+    type: 'object',
+    required: ['success', 'query'],
+    title: 'VectorSearchResponse',
+    description: 'Response for vector search.'
+} as const;
+
+export const VectorSearchResultSchema = {
+    properties: {
+        activity_id: {
+            type: 'integer',
+            title: 'Activity Id'
+        },
+        activity_title: {
+            type: 'string',
+            title: 'Activity Title'
+        },
+        chunk_text: {
+            type: 'string',
+            title: 'Chunk Text'
+        },
+        chunk_index: {
+            type: 'integer',
+            title: 'Chunk Index'
+        },
+        similarity: {
+            type: 'number',
+            title: 'Similarity'
+        },
+        metadata: {
+            additionalProperties: true,
+            type: 'object',
+            title: 'Metadata'
+        }
+    },
+    type: 'object',
+    required: ['activity_id', 'activity_title', 'chunk_text', 'chunk_index', 'similarity', 'metadata'],
+    title: 'VectorSearchResult',
+    description: 'Single vector search result.'
+} as const;

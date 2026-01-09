@@ -35,7 +35,7 @@ class ContextMiddleware(BaseHTTPMiddleware):
         token = auth_header.split(" ")[1]
         try:
             payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+                token, settings.app.secret_key, algorithms=[security.ALGORITHM]
             )
             token_data = TokenPayload(**payload)
             return token_data.sub

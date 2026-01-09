@@ -8,8 +8,8 @@ from app.core.logger import logger # noqa
 # Create Celery app with Redis broker
 celery_app = Celery(
     "traceweaver",
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL,
+    broker=settings.redis.url,
+    backend=settings.redis.url,
     include=["app.workers.tasks"],
 )
 
@@ -22,7 +22,7 @@ celery_app.conf.update(
     timezone="UTC",
     enable_utc=True,
     # Worker settings
-    worker_concurrency=settings.CELERY_WORKER_CONCURRENCY,
+    worker_concurrency=settings.celery.worker_concurrency,
     worker_prefetch_multiplier=1,  # Prevent prefetching for better concurrency control
     # Task execution settings
     task_acks_late=True,  # Acknowledge task after completion

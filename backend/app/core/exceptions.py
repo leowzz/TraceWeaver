@@ -86,7 +86,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     detail = None
     
     from app.core.config import settings
-    if settings.ENVIRONMENT == "local":
+    if settings.app.environment == "local":
         detail = {
             "type": type(exc).__name__,
             "message": str(exc),

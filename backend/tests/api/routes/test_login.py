@@ -14,10 +14,10 @@ from tests.utils.utils import random_email, random_lower_string
 
 def test_get_access_token(client: TestClient) -> None:
     login_data = {
-        "username": settings.FIRST_SUPERUSER,
-        "password": settings.FIRST_SUPERUSER_PASSWORD,
+        "username": settings.auth.first_superuser,
+        "password": settings.auth.first_superuser_password,
     }
-    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    r = client.post(f"{settings.app.api_v1_str}/login/access-token", data=login_data)
     tokens = r.json()
     assert r.status_code == 200
     assert "access_token" in tokens
@@ -26,10 +26,10 @@ def test_get_access_token(client: TestClient) -> None:
 
 def test_get_access_token_incorrect_password(client: TestClient) -> None:
     login_data = {
-        "username": settings.FIRST_SUPERUSER,
+        "username": settings.auth.first_superuser,
         "password": "incorrect",
     }
-    r = client.post(f"{settings.API_V1_STR}/login/access-token", data=login_data)
+    r = client.post(f"{settings.app.api_v1_str}/login/access-token", data=login_data)
     assert r.status_code == 400
 
 
@@ -37,7 +37,7 @@ def test_use_access_token(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
     r = client.post(
-        f"{settings.API_V1_STR}/login/test-token",
+        f"{settings.app.api_v1_str}/login/test-token",
         headers=superuser_token_headers,
     )
     result = r.json()
@@ -49,12 +49,13 @@ def test_recovery_password(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
     with (
-        patch("app.core.config.settings.SMTP_HOST", "smtp.example.com"),
-        patch("app.core.config.settings.SMTP_USER", "admin@example.com"),
+        patch("app.utils.send_email", return_value=None),
+        patch("app.core.config.settings.smtp.host", "smtp.example.com"),
+        patch("app.core.config.settings.smtp.from_email", "admin@example.com"),
     ):
         email = "test@example.com"
         r = client.post(
-            f"{settings.API_V1_STR}/password-recovery/{email}",
+            f"{settings.app.api_v1_str}/password-recovery/{email}",
             headers=normal_user_token_headers,
         )
         assert r.status_code == 200
@@ -66,7 +67,7 @@ def test_recovery_password_user_not_exits(
 ) -> None:
     email = "jVgQr@example.com"
     r = client.post(
-        f"{settings.API_V1_STR}/password-recovery/{email}",
+        f"{settings.app.api_v1_str}/password-recovery/{email}",
         headers=normal_user_token_headers,
     )
     assert r.status_code == 404
@@ -90,7 +91,7 @@ def test_reset_password(client: TestClient, db: Session) -> None:
     data = {"new_password": new_password, "token": token}
 
     r = client.post(
-        f"{settings.API_V1_STR}/reset-password/",
+        f"{settings.app.api_v1_str}/reset-password/",
         headers=headers,
         json=data,
     )
@@ -107,7 +108,7 @@ def test_reset_password_invalid_token(
 ) -> None:
     data = {"new_password": "changethis", "token": "invalid"}
     r = client.post(
-        f"{settings.API_V1_STR}/reset-password/",
+        f"{settings.app.api_v1_str}/reset-password/",
         headers=superuser_token_headers,
         json=data,
     )

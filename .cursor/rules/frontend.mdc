@@ -5,6 +5,8 @@ globs: ["frontend/**/*.{ts,tsx}"]
 
 # 前端开发规则
 
+安装软件包时, 使用 `pnpm install <package>`
+
 ## 技术栈
 
 - **React 18** - UI 框架

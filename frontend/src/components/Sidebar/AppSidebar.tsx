@@ -1,4 +1,4 @@
-import { Bot, Database, Home, ImagePlus, MessageSquare, Terminal, Users } from "lucide-react"
+import { Bot, Database, Home, ImagePlus, MessageSquare, Search, Terminal, Users } from "lucide-react"
 
 import { SidebarAppearance } from "@/components/Common/Appearance"
 import { Logo } from "@/components/Common/Logo"
@@ -23,6 +23,7 @@ const baseItems: Item[] = [
 const adminItems: Item[] = [
   { icon: Users, title: "Admin", path: "/admin" },
   { icon: Terminal, title: "Debug SQL", path: "/debug-siyuan-sql" },
+  { icon: Search, title: "Debug Vector", path: "/debug-vector-search" },
 ]
 
 export function AppSidebar() {

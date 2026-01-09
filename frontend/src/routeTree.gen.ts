@@ -19,6 +19,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutLlmPromptsRouteImport } from './routes/_layout/llm-prompts'
 import { Route as LayoutLlmModelsRouteImport } from './routes/_layout/llm-models'
 import { Route as LayoutImageAnalysesRouteImport } from './routes/_layout/image-analyses'
+import { Route as LayoutDebugVectorSearchRouteImport } from './routes/_layout/debug-vector-search'
 import { Route as LayoutDebugSiyuanSqlRouteImport } from './routes/_layout/debug-siyuan-sql'
 import { Route as LayoutDatasourcesRouteImport } from './routes/_layout/datasources'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -73,6 +74,11 @@ const LayoutImageAnalysesRoute = LayoutImageAnalysesRouteImport.update({
   path: '/image-analyses',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutDebugVectorSearchRoute = LayoutDebugVectorSearchRouteImport.update({
+  id: '/debug-vector-search',
+  path: '/debug-vector-search',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutDebugSiyuanSqlRoute = LayoutDebugSiyuanSqlRouteImport.update({
   id: '/debug-siyuan-sql',
   path: '/debug-siyuan-sql',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
   '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
+  '/debug-vector-search': typeof LayoutDebugVectorSearchRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/datasources': typeof LayoutDatasourcesRoute
   '/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
+  '/debug-vector-search': typeof LayoutDebugVectorSearchRoute
   '/image-analyses': typeof LayoutImageAnalysesRoute
   '/llm-models': typeof LayoutLlmModelsRoute
   '/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/datasources': typeof LayoutDatasourcesRoute
   '/_layout/debug-siyuan-sql': typeof LayoutDebugSiyuanSqlRoute
+  '/_layout/debug-vector-search': typeof LayoutDebugVectorSearchRoute
   '/_layout/image-analyses': typeof LayoutImageAnalysesRoute
   '/_layout/llm-models': typeof LayoutLlmModelsRoute
   '/_layout/llm-prompts': typeof LayoutLlmPromptsRouteWithChildren
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/datasources'
     | '/debug-siyuan-sql'
+    | '/debug-vector-search'
     | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/datasources'
     | '/debug-siyuan-sql'
+    | '/debug-vector-search'
     | '/image-analyses'
     | '/llm-models'
     | '/llm-prompts'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/datasources'
     | '/_layout/debug-siyuan-sql'
+    | '/_layout/debug-vector-search'
     | '/_layout/image-analyses'
     | '/_layout/llm-models'
     | '/_layout/llm-prompts'
@@ -270,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutImageAnalysesRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/debug-vector-search': {
+      id: '/_layout/debug-vector-search'
+      path: '/debug-vector-search'
+      fullPath: '/debug-vector-search'
+      preLoaderRoute: typeof LayoutDebugVectorSearchRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/debug-siyuan-sql': {
       id: '/_layout/debug-siyuan-sql'
       path: '/debug-siyuan-sql'
@@ -316,6 +335,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutDatasourcesRoute: typeof LayoutDatasourcesRoute
   LayoutDebugSiyuanSqlRoute: typeof LayoutDebugSiyuanSqlRoute
+  LayoutDebugVectorSearchRoute: typeof LayoutDebugVectorSearchRoute
   LayoutImageAnalysesRoute: typeof LayoutImageAnalysesRoute
   LayoutLlmModelsRoute: typeof LayoutLlmModelsRoute
   LayoutLlmPromptsRoute: typeof LayoutLlmPromptsRouteWithChildren
@@ -327,6 +347,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutDatasourcesRoute: LayoutDatasourcesRoute,
   LayoutDebugSiyuanSqlRoute: LayoutDebugSiyuanSqlRoute,
+  LayoutDebugVectorSearchRoute: LayoutDebugVectorSearchRoute,
   LayoutImageAnalysesRoute: LayoutImageAnalysesRoute,
   LayoutLlmModelsRoute: LayoutLlmModelsRoute,
   LayoutLlmPromptsRoute: LayoutLlmPromptsRouteWithChildren,

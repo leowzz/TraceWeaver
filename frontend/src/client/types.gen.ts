@@ -397,11 +397,51 @@ export type ValidationError = {
     type: string;
 };
 
+/**
+ * Request body for vector search.
+ */
+export type VectorSearchRequest = {
+    query: string;
+    top_k?: number;
+    min_similarity?: number;
+};
+
+/**
+ * Response for vector search.
+ */
+export type VectorSearchResponse = {
+    success: boolean;
+    query: string;
+    results?: (Array<VectorSearchResult> | null);
+    error?: (string | null);
+    query_embedding_dimensions?: (number | null);
+};
+
+/**
+ * Single vector search result.
+ */
+export type VectorSearchResult = {
+    activity_id: number;
+    activity_title: string;
+    chunk_text: string;
+    chunk_index: number;
+    similarity: number;
+    metadata: {
+        [key: string]: unknown;
+    };
+};
+
 export type DebugExecuteSiyuanSqlData = {
     requestBody: SiYuanSQLRequest;
 };
 
 export type DebugExecuteSiyuanSqlResponse = (SiYuanSQLResponse);
+
+export type DebugVectorSearchData = {
+    requestBody: VectorSearchRequest;
+};
+
+export type DebugVectorSearchResponse = (VectorSearchResponse);
 
 export type HealthHealthResponse = (unknown);
 

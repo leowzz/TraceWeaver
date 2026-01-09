@@ -30,7 +30,7 @@ from app.models import *
 
 
 def get_url():
-    return str(settings.SQLALCHEMY_DATABASE_URI)
+    return str(settings.sqlalchemy_database_uri)
 
 
 def run_migrations_offline():

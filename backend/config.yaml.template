@@ -54,8 +54,8 @@ monitoring:
 # Embedding 配置（向量化）
 embedder:
   provider: "ollama"  # openai, ollama, huggingface, gemini, cohere
-  model_name: "milkey/m3e:base-f16"
-  dimensions: 768  # m3e-base 模型的向量维度
+  model_name: "qwen3-embedding:0.6b"
+  dimensions: 1024  # embedder模型的向量维度
   
   # Ollama 配置
   base_url: "http://192.168.177.20:11434"
@@ -69,6 +69,6 @@ embedder:
   api_base: null
 
 # Dayflow 本地数据库配置
-dayflow_local:
+dayflow:
   db_path: "/Users/leo/Library/Application Support/Dayflow/backups/chunks-2026-01-10_010434.sqlite"
   enabled: true

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { DebugExecuteSiyuanSqlData, DebugExecuteSiyuanSqlResponse, HealthHealthResponse, ImageAnalysesReadImageAnalysesData, ImageAnalysesReadImageAnalysesResponse, ImageAnalysesReadImageAnalysisData, ImageAnalysesReadImageAnalysisResponse, ImageAnalysesGetImageAnalysisImageData, ImageAnalysesGetImageAnalysisImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { DebugExecuteSiyuanSqlData, DebugExecuteSiyuanSqlResponse, DebugVectorSearchData, DebugVectorSearchResponse, HealthHealthResponse, ImageAnalysesReadImageAnalysesData, ImageAnalysesReadImageAnalysesResponse, ImageAnalysesReadImageAnalysisData, ImageAnalysesReadImageAnalysisResponse, ImageAnalysesGetImageAnalysisImageData, ImageAnalysesGetImageAnalysisImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class DebugService {
     /**
@@ -20,6 +20,28 @@ export class DebugService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/debug/siyuan-sql',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Vector Search
+     * Execute vector similarity search.
+     *
+     * Admin only. Use for debugging and testing vector embeddings.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns VectorSearchResponse Successful Response
+     * @throws ApiError
+     */
+    public static vectorSearch(data: DebugVectorSearchData): CancelablePromise<DebugVectorSearchResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/debug/vector-search',
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {

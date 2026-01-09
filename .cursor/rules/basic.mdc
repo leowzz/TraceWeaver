@@ -7,3 +7,8 @@ alwaysApply: true
 - **不要有实体外键约束**, 如果需要配置relationship-通过虚拟外键关系
 - 复杂对象/函数中存在多个参数. 封装为pydantic的schema, 轻易不要传递dict或get_item方式取值
 - 不要使用 `int | None` 这种类型定义，要用 `Optional[int]`
+- 生成前端客户端代码:
+    ```shell
+    cd /Users/leo/Desktop/work/TraceWeaver/backend && make dev
+    cd /Users/leo/Desktop/work/TraceWeaver/frontend && npm run generate-client
+    ```

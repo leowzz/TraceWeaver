@@ -25,10 +25,10 @@ class ActivityEmbedding(SQLModel, table=True):
     
     # Vector data
     embedding: list[float] = Field(
-        sa_column=Column(Vector(768)),  # m3e-base 使用 768 维向量
+        sa_column=Column(Vector(1024)),
         description="Vector embedding of the chunk"
     )
-    
+
     # Chunk metadata
     chunk_text: str = Field(description="Original text of this chunk")
     chunk_index: int = Field(description="Position of chunk in the activity")

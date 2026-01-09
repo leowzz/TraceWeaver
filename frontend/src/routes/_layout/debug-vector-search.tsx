@@ -47,22 +47,6 @@ function DebugVectorSearch() {
   const [minSimilarity, setMinSimilarity] = useState("0.7")
   const [result, setResult] = useState<VectorSearchResponse | null>(null)
 
-  // Check if user is admin
-  if (!user?.is_superuser) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <Card className="w-[400px]">
-          <CardHeader>
-            <CardTitle className="text-destructive">Access Denied</CardTitle>
-            <CardDescription>
-              This page is only accessible to admin users.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    )
-  }
-
   const executeMutation = useMutation({
     mutationFn: async (params: { query: string; top_k: number; min_similarity: number }) => {
       const token = typeof OpenAPI.TOKEN === 'function'
@@ -112,6 +96,22 @@ function DebugVectorSearch() {
     if (similarity >= 0.7) return "bg-yellow-500"
     if (similarity >= 0.6) return "bg-orange-500"
     return "bg-red-500"
+  }
+
+  // Check if user is admin (after all hooks)
+  if (!user?.is_superuser) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Card className="w-[400px]">
+          <CardHeader>
+            <CardTitle className="text-destructive">Access Denied</CardTitle>
+            <CardDescription>
+              This page is only accessible to admin users.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
   }
 
   return (

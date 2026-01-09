@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, Enum as SQLAEnum
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.enums import AnalysisStatus, SourceType, ImageSourceType
@@ -60,3 +61,7 @@ class ImageAnalysis(SQLModel, table=True):
         default_factory=datetime.now,
         sa_column_kwargs={"onupdate": datetime.now},
     )
+
+    extra_data: dict = Field(
+        default_factory=dict, sa_column=Column(JSONB)
+    )  # Source-specific data stored as JSONB

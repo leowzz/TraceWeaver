@@ -705,6 +705,58 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const SiYuanSQLRequestSchema = {
+    properties: {
+        stmt: {
+            type: 'string',
+            title: 'Stmt'
+        }
+    },
+    type: 'object',
+    required: ['stmt'],
+    title: 'SiYuanSQLRequest',
+    description: 'Request body for SiYuan SQL execution.'
+} as const;
+
+export const SiYuanSQLResponseSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        data: {
+            anyOf: [
+                {
+                    items: {
+                        additionalProperties: true,
+                        type: 'object'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Data'
+        },
+        error: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Error'
+        }
+    },
+    type: 'object',
+    required: ['success'],
+    title: 'SiYuanSQLResponse',
+    description: 'Response for SiYuan SQL execution.'
+} as const;
+
 export const SourceConfigCreateSchema = {
     properties: {
         type: {

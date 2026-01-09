@@ -16,6 +16,9 @@ class ImageAnalysisTaskData(BaseModel):
     source_type: ImageSourceType = Field(..., description="Source type")
     llm_prompt_id: int = Field(..., description="LLM prompt template ID")
     model_name: str = Field(..., description="LLM model name/ID to use")
+    extra_data: dict = Field(
+        default_factory=dict, description="Additional data for task"
+    )
 
     @field_validator("img_path")
     @classmethod

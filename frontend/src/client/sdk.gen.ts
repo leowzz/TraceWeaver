@@ -3,7 +3,31 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { HealthHealthResponse, ImageAnalysesReadImageAnalysesData, ImageAnalysesReadImageAnalysesResponse, ImageAnalysesReadImageAnalysisData, ImageAnalysesReadImageAnalysisResponse, ImageAnalysesGetImageAnalysisImageData, ImageAnalysesGetImageAnalysisImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { DebugExecuteSiyuanSqlData, DebugExecuteSiyuanSqlResponse, HealthHealthResponse, ImageAnalysesReadImageAnalysesData, ImageAnalysesReadImageAnalysesResponse, ImageAnalysesReadImageAnalysisData, ImageAnalysesReadImageAnalysisResponse, ImageAnalysesGetImageAnalysisImageData, ImageAnalysesGetImageAnalysisImageResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LlmModelConfigsReadLlmModelConfigsData, LlmModelConfigsReadLlmModelConfigsResponse, LlmModelConfigsCreateLlmModelConfigData, LlmModelConfigsCreateLlmModelConfigResponse, LlmModelConfigsReadLlmModelConfigData, LlmModelConfigsReadLlmModelConfigResponse, LlmModelConfigsUpdateLlmModelConfigData, LlmModelConfigsUpdateLlmModelConfigResponse, LlmModelConfigsDeleteLlmModelConfigData, LlmModelConfigsDeleteLlmModelConfigResponse, LlmPromptsReadLlmPromptsData, LlmPromptsReadLlmPromptsResponse, LlmPromptsCreateLlmPromptData, LlmPromptsCreateLlmPromptResponse, LlmPromptsReadLlmPromptData, LlmPromptsReadLlmPromptResponse, LlmPromptsUpdateLlmPromptData, LlmPromptsUpdateLlmPromptResponse, LlmPromptsDeleteLlmPromptData, LlmPromptsDeleteLlmPromptResponse, LlmPromptsTestLlmPromptData, LlmPromptsTestLlmPromptResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, SourceConfigsReadSourceConfigsData, SourceConfigsReadSourceConfigsResponse, SourceConfigsCreateSourceConfigData, SourceConfigsCreateSourceConfigResponse, SourceConfigsReadSourceConfigData, SourceConfigsReadSourceConfigResponse, SourceConfigsUpdateSourceConfigData, SourceConfigsUpdateSourceConfigResponse, SourceConfigsDeleteSourceConfigData, SourceConfigsDeleteSourceConfigResponse, SourceConfigsTestSourceConfigConnectionData, SourceConfigsTestSourceConfigConnectionResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class DebugService {
+    /**
+     * Execute Siyuan Sql
+     * Execute SQL query on SiYuan.
+     *
+     * Admin only. Use for debugging purposes.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns SiYuanSQLResponse Successful Response
+     * @throws ApiError
+     */
+    public static executeSiyuanSql(data: DebugExecuteSiyuanSqlData): CancelablePromise<DebugExecuteSiyuanSqlResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/debug/siyuan-sql',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class HealthService {
     /**

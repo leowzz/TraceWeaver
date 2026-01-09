@@ -1,0 +1,708 @@
+---
+alwaysApply: true
+globs: ["frontend/**/*.{ts,tsx}"]
+---
+
+# 前端开发规则
+
+## 技术栈
+
+- **React 18** - UI 框架
+- **TypeScript** - 类型安全
+- **TanStack Router** - 类型安全路由
+- **TanStack Query** - 数据获取和状态管理
+- **shadcn/ui** - UI 组件库
+- **Tailwind CSS** - 样式框架
+- **Vite** - 构建工具
+
+## 组件开发规范
+
+### 使用函数组件
+
+```typescript
+// ✅ 正确：函数组件
+import { FC } from 'react'
+
+interface ActivityCardProps {
+  activity: Activity
+  onSelect?: (id: number) => void
+}
+
+export const ActivityCard: FC<ActivityCardProps> = ({ activity, onSelect }) => {
+  return (
+    <div className="card" onClick={() => onSelect?.(activity.id)}>
+      <h3>{activity.title}</h3>
+      <p>{activity.content}</p>
+    </div>
+  )
+}
+
+// ❌ 错误：类组件
+class ActivityCard extends React.Component {  // 禁止使用
+  render() { ... }
+}
+```
+
+### Props 类型定义
+
+所有组件必须定义完整的 Props 类型：
+
+```typescript
+// ✅ 正确：完整的 Props 类型
+interface ActivityListProps {
+  activities: Activity[]
+  loading?: boolean
+  onRefresh?: () => void
+  emptyMessage?: string
+}
+
+export const ActivityList: FC<ActivityListProps> = ({
+  activities,
+  loading = false,
+  onRefresh,
+  emptyMessage = '暂无活动',
+}) => {
+  // 组件实现
+}
+
+// ❌ 错误：缺少类型定义
+export const ActivityList = ({ activities, loading }) => {  // 禁止
+  // ...
+}
+```
+
+### 组件文件结构
+
+```typescript
+// ActivityCard.tsx
+import { FC } from 'react'
+import { Activity } from '@/client/types.gen'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+
+// 1. 类型定义
+interface ActivityCardProps {
+  activity: Activity
+  onSelect?: (id: number) => void
+}
+
+// 2. 子组件（如果有）
+const ActivityMeta: FC<{ date: string }> = ({ date }) => (
+  <span className="text-sm text-muted-foreground">{date}</span>
+)
+
+// 3. 主组件
+export const ActivityCard: FC<ActivityCardProps> = ({ activity, onSelect }) => {
+  // 组件逻辑
+  return (
+    <Card onClick={() => onSelect?.(activity.id)}>
+      <CardHeader>
+        <h3>{activity.title}</h3>
+        <ActivityMeta date={activity.occurred_at} />
+      </CardHeader>
+      <CardContent>
+        <p>{activity.content}</p>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+## TanStack Query 使用规范
+
+### 数据获取
+
+使用自动生成的客户端和 TanStack Query：
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ActivitiesService, ActivityCreate } from '@/client'
+
+// ✅ 正确：使用 useQuery
+export const useActivities = (userId: string) => {
+  return useQuery({
+    queryKey: ['activities', userId],
+    queryFn: () => ActivitiesService.listActivities({ userId }),
+    staleTime: 1000 * 60 * 5,  // 5分钟
+  })
+}
+
+// ✅ 正确：使用 useMutation
+export const useCreateActivity = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: (data: ActivityCreate) => 
+      ActivitiesService.createActivity({ requestBody: data }),
+    onSuccess: () => {
+      // 刷新活动列表
+      queryClient.invalidateQueries({ queryKey: ['activities'] })
+    },
+  })
+}
+
+// 在组件中使用
+const ActivityListPage: FC = () => {
+  const { data, isLoading, error } = useActivities('user-id')
+  const createMutation = useCreateActivity()
+  
+  if (isLoading) return <Loading />
+  if (error) return <Error message={error.message} />
+  
+  return (
+    <div>
+      {data?.map(activity => (
+        <ActivityCard key={activity.id} activity={activity} />
+      ))}
+    </div>
+  )
+}
+```
+
+### Query Key 命名规范
+
+使用数组形式，层级清晰：
+
+```typescript
+// ✅ 正确：结构化 Query Key
+['activities']  // 所有活动
+['activities', userId]  // 特定用户的活动
+['activities', userId, { filter: 'git' }]  // 带过滤条件
+['activities', activityId]  // 单个活动
+['reports', 'daily', date]  // 日报
+
+// ❌ 错误：字符串拼接
+['activities-' + userId]  // 不利于缓存管理
+['activity_detail_' + id]  // 难以批量失效
+```
+
+### 数据更新策略
+
+```typescript
+// 乐观更新
+const updateMutation = useMutation({
+  mutationFn: (data: ActivityUpdate) => 
+    ActivitiesService.updateActivity({ id: data.id, requestBody: data }),
+  onMutate: async (newData) => {
+    // 取消正在进行的查询
+    await queryClient.cancelQueries({ queryKey: ['activities', newData.id] })
+    
+    // 保存旧数据
+    const previousData = queryClient.getQueryData(['activities', newData.id])
+    
+    // 乐观更新
+    queryClient.setQueryData(['activities', newData.id], newData)
+    
+    return { previousData }
+  },
+  onError: (err, newData, context) => {
+    // 回滚
+    if (context?.previousData) {
+      queryClient.setQueryData(['activities', newData.id], context.previousData)
+    }
+  },
+  onSettled: (data) => {
+    // 重新获取数据
+    queryClient.invalidateQueries({ queryKey: ['activities', data?.id] })
+  },
+})
+```
+
+## TanStack Router 使用规范
+
+### 路由定义
+
+```typescript
+// routes/activities.tsx
+import { createFileRoute } from '@tanstack/react-router'
+import { ActivitiesService } from '@/client'
+
+// 定义路由参数类型
+interface ActivitySearchParams {
+  filter?: 'git' | 'siyuan' | 'dayflow'
+  date?: string
+}
+
+export const Route = createFileRoute('/activities')({
+  component: ActivitiesPage,
+  
+  // 类型安全的搜索参数
+  validateSearch: (search: Record<string, unknown>): ActivitySearchParams => ({
+    filter: search.filter as ActivitySearchParams['filter'],
+    date: search.date as string,
+  }),
+  
+  // 数据预加载
+  loader: async ({ context }) => {
+    const activities = await ActivitiesService.listActivities({
+      userId: context.auth.userId,
+    })
+    return { activities }
+  },
+})
+
+// 组件中使用
+function ActivitiesPage() {
+  const { activities } = Route.useLoaderData()
+  const { filter, date } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  
+  return (
+    <div>
+      <button onClick={() => navigate({ search: { filter: 'git' } })}>
+        筛选 Git 活动
+      </button>
+      <ActivityList activities={activities} />
+    </div>
+  )
+}
+```
+
+### 路由导航
+
+```typescript
+import { useNavigate } from '@tanstack/react-router'
+
+// ✅ 正确：类型安全的导航
+const navigate = useNavigate()
+
+navigate({ to: '/activities' })
+navigate({ to: '/activities/$id', params: { id: '123' } })
+navigate({ to: '/activities', search: { filter: 'git' } })
+navigate({ to: '..', }) // 返回上级
+
+// ✅ 正确：Link 组件
+import { Link } from '@tanstack/react-router'
+
+<Link 
+  to="/activities/$id" 
+  params={{ id: activity.id }}
+  className="text-primary hover:underline"
+>
+  查看详情
+</Link>
+```
+
+## shadcn/ui 使用规范
+
+### 组件导入和使用
+
+```typescript
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/use-toast'
+
+// ✅ 正确：使用 shadcn/ui 组件
+export const ActivityForm: FC = () => {
+  const { toast } = useToast()
+  
+  const handleSubmit = () => {
+    toast({
+      title: '保存成功',
+      description: '活动已创建',
+    })
+  }
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>创建活动</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <Input placeholder="活动标题" />
+          <Button type="submit">保存</Button>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### 自定义 shadcn 组件
+
+```typescript
+// ✅ 正确：基于 shadcn 扩展
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
+
+interface LoadingButtonProps extends React.ComponentProps<typeof Button> {
+  loading?: boolean
+}
+
+export const LoadingButton: FC<LoadingButtonProps> = ({
+  loading,
+  children,
+  ...props
+}) => {
+  return (
+    <Button disabled={loading} {...props}>
+      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      {children}
+    </Button>
+  )
+}
+```
+
+## Tailwind CSS 规范
+
+### 类名使用
+
+```typescript
+// ✅ 正确：使用 Tailwind 工具类
+<div className="flex items-center justify-between p-4 bg-card rounded-lg shadow-md">
+  <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+  <span className="text-sm text-muted-foreground">{date}</span>
+</div>
+
+// ✅ 正确：条件类名
+import { cn } from '@/lib/utils'
+
+<div className={cn(
+  'px-4 py-2 rounded',
+  isActive && 'bg-primary text-primary-foreground',
+  isDisabled && 'opacity-50 cursor-not-allowed'
+)}>
+  {content}
+</div>
+
+// ❌ 错误：内联样式（除非必要）
+<div style={{ padding: '16px', backgroundColor: 'white' }}>  // 避免
+  {content}
+</div>
+```
+
+### 响应式设计
+
+```typescript
+// ✅ 正确：移动优先的响应式设计
+<div className="
+  grid grid-cols-1           
+  md:grid-cols-2            
+  lg:grid-cols-3            
+  gap-4
+">
+  {items.map(item => <Card key={item.id} {...item} />)}
+</div>
+
+// 断点说明：
+// sm: 640px
+// md: 768px
+// lg: 1024px
+// xl: 1280px
+// 2xl: 1536px
+```
+
+### 深色模式
+
+使用 CSS 变量和 Tailwind 的 `dark:` 前缀：
+
+```typescript
+// ✅ 正确：支持深色模式
+<div className="
+  bg-background 
+  text-foreground
+  border border-border
+  dark:bg-background
+  dark:text-foreground
+">
+  {content}
+</div>
+
+// 使用 shadcn/ui 的颜色变量（自动支持深色模式）
+<div className="bg-card text-card-foreground">
+  <h2 className="text-primary">标题</h2>
+  <p className="text-muted-foreground">描述</p>
+</div>
+```
+
+## 自动生成客户端使用
+
+### 类型定义
+
+使用自动生成的类型：
+
+```typescript
+// ✅ 正确：使用生成的类型
+import type { 
+  Activity, 
+  ActivityCreate, 
+  ActivityUpdate,
+  SourceConfig,
+  SourceType 
+} from '@/client/types.gen'
+
+interface ActivityFormData {
+  title: string
+  content?: string
+  source_type: SourceType
+}
+
+const createActivity = (data: ActivityFormData): ActivityCreate => {
+  return {
+    ...data,
+    occurred_at: new Date().toISOString(),
+  }
+}
+
+// ❌ 错误：手动定义类型
+interface Activity {  // 不要重复定义
+  id: number
+  title: string
+  // ...
+}
+```
+
+### API 调用
+
+```typescript
+import { ActivitiesService, SourceConfigsService } from '@/client'
+
+// ✅ 正确：使用生成的服务
+const activities = await ActivitiesService.listActivities({
+  userId: 'user-id',
+  skip: 0,
+  limit: 20,
+})
+
+const sourceConfig = await SourceConfigsService.createSourceConfig({
+  requestBody: {
+    type: 'git',
+    name: 'Backend Repo',
+    config_payload: {
+      repo_path: '/path/to/repo',
+      branch: 'main',
+    },
+  },
+})
+
+// ❌ 错误：手动 fetch
+fetch('/api/v1/activities?userId=user-id')  // 不要手动调用
+  .then(res => res.json())
+```
+
+## 状态管理
+
+### 优先使用服务端状态（TanStack Query）
+
+```typescript
+// ✅ 正确：服务端状态由 TanStack Query 管理
+const { data: activities } = useQuery({
+  queryKey: ['activities'],
+  queryFn: () => ActivitiesService.listActivities(),
+})
+
+// ✅ 正确：客户端状态使用 useState
+const [selectedId, setSelectedId] = useState<number | null>(null)
+const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+// ❌ 错误：不需要用 useState 管理服务端数据
+const [activities, setActivities] = useState<Activity[]>([])  // 不必要
+useEffect(() => {
+  ActivitiesService.listActivities().then(setActivities)
+}, [])
+```
+
+### 表单状态
+
+使用 React Hook Form：
+
+```typescript
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+// 定义表单 schema
+const activitySchema = z.object({
+  title: z.string().min(1, '标题不能为空'),
+  content: z.string().optional(),
+  source_type: z.enum(['git', 'siyuan', 'dayflow']),
+})
+
+type ActivityFormData = z.infer<typeof activitySchema>
+
+// ✅ 正确：使用 React Hook Form
+export const ActivityForm: FC = () => {
+  const { register, handleSubmit, formState: { errors } } = useForm<ActivityFormData>({
+    resolver: zodResolver(activitySchema),
+  })
+  
+  const createMutation = useCreateActivity()
+  
+  const onSubmit = (data: ActivityFormData) => {
+    createMutation.mutate(data)
+  }
+  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Input {...register('title')} placeholder="标题" />
+      {errors.title && <span className="text-destructive">{errors.title.message}</span>}
+      
+      <Button type="submit" loading={createMutation.isPending}>
+        保存
+      </Button>
+    </form>
+  )
+}
+```
+
+## 错误处理
+
+### 错误边界
+
+```typescript
+import { Component, ReactNode } from 'react'
+
+interface ErrorBoundaryProps {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error?: Error
+}
+
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-4 text-center">
+          <h2 className="text-lg font-semibold text-destructive">出错了</h2>
+          <p className="text-sm text-muted-foreground">{this.state.error?.message}</p>
+        </div>
+      )
+    }
+    
+    return this.props.children
+  }
+}
+```
+
+### API 错误处理
+
+```typescript
+import { useToast } from '@/components/ui/use-toast'
+
+export const useActivities = () => {
+  const { toast } = useToast()
+  
+  return useQuery({
+    queryKey: ['activities'],
+    queryFn: () => ActivitiesService.listActivities(),
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: '加载失败',
+        description: error.message,
+      })
+    },
+  })
+}
+```
+
+## 性能优化
+
+### 懒加载
+
+```typescript
+import { lazy, Suspense } from 'react'
+
+// ✅ 正确：路由级别的懒加载
+const ActivitiesPage = lazy(() => import('./pages/ActivitiesPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+
+function App() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/activities" element={<ActivitiesPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+      </Routes>
+    </Suspense>
+  )
+}
+```
+
+### Memo 优化
+
+```typescript
+import { memo } from 'react'
+
+// ✅ 正确：对昂贵的组件使用 memo
+export const ActivityCard = memo<ActivityCardProps>(({ activity, onSelect }) => {
+  return (
+    <Card onClick={() => onSelect?.(activity.id)}>
+      {/* 复杂的渲染逻辑 */}
+    </Card>
+  )
+}, (prevProps, nextProps) => {
+  // 自定义比较逻辑
+  return prevProps.activity.id === nextProps.activity.id
+})
+```
+
+## 代码组织
+
+### 文件命名
+
+```
+components/
+  ├── ActivityCard.tsx          # 组件
+  ├── ActivityList.tsx
+  └── ui/                       # shadcn/ui 组件
+      ├── button.tsx
+      └── card.tsx
+
+hooks/
+  ├── useActivities.ts          # 自定义 Hook
+  ├── useAuth.ts
+  └── useDebounce.ts
+
+routes/
+  ├── index.tsx                 # 路由页面
+  ├── activities.tsx
+  └── reports/
+      ├── daily.tsx
+      └── weekly.tsx
+
+lib/
+  ├── utils.ts                  # 工具函数
+  └── constants.ts              # 常量
+```
+
+### 导入顺序
+
+```typescript
+// 1. React 相关
+import { FC, useState, useEffect } from 'react'
+
+// 2. 第三方库
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
+
+// 3. 自动生成的客户端
+import { ActivitiesService, Activity } from '@/client'
+
+// 4. 本地组件
+import { ActivityCard } from '@/components/ActivityCard'
+import { Button } from '@/components/ui/button'
+
+// 5. 工具函数
+import { cn } from '@/lib/utils'
+
+// 6. 类型
+import type { ActivityCardProps } from './types'
+
+// 7. 样式
+import './styles.css'
+```

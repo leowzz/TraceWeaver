@@ -1,0 +1,530 @@
+---
+alwaysApply: true
+globs: ["backend/app/models/**/*.py", "backend/alembic/**/*.py"]
+---
+
+# 数据库规则
+
+## Alembic 迁移规范
+
+### 核心原则：手动生成，人工审核
+
+**AI 不应自动生成 Alembic 迁移脚本内容**，而应提醒用户手动执行命令。
+
+### 提醒用户生成迁移
+
+当检测到 Model 变更时，提供以下提示：
+
+```
+⚠️ 检测到数据库模型变更
+
+请手动执行以下命令生成迁移脚本：
+
+cd backend
+alembic revision --autogenerate -m "描述性的迁移说明"
+
+生成后请执行以下检查：
+1. 查看 backend/alembic/versions/ 下的新脚本
+2. 审核 upgrade() 和 downgrade() 函数
+3. 确认表名、列名、索引是否正确
+4. 检查是否需要数据迁移逻辑
+5. 测试环境验证后再应用到生产环境
+
+应用迁移：
+alembic upgrade head
+
+回滚迁移（如有问题）：
+alembic downgrade -1
+```
+
+### 迁移脚本审核清单
+
+生成迁移脚本后，提醒用户检查：
+
+#### 1. 表和列定义
+
+```python
+# ✅ 检查：表名是否正确
+op.create_table('activity_embedding',  # 确认表名
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('activity_id', sa.Integer(), nullable=True),  # 确认类型和 nullable
+    ...
+)
+
+# ✅ 检查：列类型是否合适
+sa.Column('embedding', postgresql.VECTOR(1536))  # 向量维度正确吗？
+sa.Column('extra_data', postgresql.JSONB())  # JSONB 类型正确
+```
+
+#### 2. 索引定义
+
+```python
+# ✅ 检查：索引是否必要且正确
+op.create_index(
+    'idx_embedding_vector',
+    'activity_embedding',
+    ['embedding'],
+    postgresql_using='hnsw',  # 向量索引使用 HNSW
+    postgresql_with={'m': 16, 'ef_construction': 64},
+    postgresql_ops={'embedding': 'vector_cosine_ops'}
+)
+
+# ✅ 检查：复合索引顺序
+op.create_index('idx_user_occurred', 'activity', ['user_id', 'occurred_at'])
+```
+
+#### 3. 约束定义
+
+```python
+# ✅ 检查：唯一约束
+op.create_unique_constraint('uq_activity_fingerprint', 'activity', ['fingerprint'])
+
+# ⚠️ 注意：不应有外键约束（项目规范）
+# 如果自动生成了外键，需要手动删除：
+# op.create_foreign_key(...)  # 删除这行
+```
+
+#### 4. 数据迁移
+
+对于需要数据迁移的场景：
+
+```python
+# ✅ 正确：安全的数据迁移
+def upgrade():
+    # 1. 先添加列（允许 NULL）
+    op.add_column('activity', sa.Column('new_field', sa.String(), nullable=True))
+    
+    # 2. 填充数据
+    connection = op.get_bind()
+    connection.execute(
+        text("UPDATE activity SET new_field = 'default_value' WHERE new_field IS NULL")
+    )
+    
+    # 3. 设置为 NOT NULL（如果需要）
+    op.alter_column('activity', 'new_field', nullable=False)
+
+def downgrade():
+    op.drop_column('activity', 'new_field')
+```
+
+### 常见迁移场景
+
+#### 添加新表
+
+```python
+def upgrade():
+    op.create_table(
+        'activity_embedding',
+        sa.Column('id', sa.Integer(), primary_key=True),
+        sa.Column('activity_id', sa.Integer(), nullable=False, index=True),
+        sa.Column('user_id', sa.String(), nullable=False, index=True),
+        sa.Column('embedding', postgresql.VECTOR(1536), nullable=False),
+        sa.Column('chunk_text', sa.Text(), nullable=False),
+        sa.Column('chunk_index', sa.Integer(), nullable=False),
+        sa.Column('embedder_model', sa.String(), nullable=False),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+    )
+    
+    # 添加向量索引
+    op.create_index(
+        'idx_embedding_vector',
+        'activity_embedding',
+        ['embedding'],
+        postgresql_using='hnsw',
+        postgresql_with={'m': 16, 'ef_construction': 64},
+        postgresql_ops={'embedding': 'vector_cosine_ops'}
+    )
+
+def downgrade():
+    op.drop_index('idx_embedding_vector', table_name='activity_embedding')
+    op.drop_table('activity_embedding')
+```
+
+#### 添加列
+
+```python
+def upgrade():
+    op.add_column('activity', sa.Column('fingerprint', sa.String(), nullable=True))
+    
+    # 填充已有数据的 fingerprint
+    connection = op.get_bind()
+    connection.execute(
+        text("""
+            UPDATE activity 
+            SET fingerprint = md5(
+                source_type || ':' || source_id || ':' || occurred_at::text
+            )
+            WHERE fingerprint IS NULL
+        """)
+    )
+    
+    # 设置为 NOT NULL 和 UNIQUE
+    op.alter_column('activity', 'fingerprint', nullable=False)
+    op.create_unique_constraint('uq_activity_fingerprint', 'activity', ['fingerprint'])
+
+def downgrade():
+    op.drop_constraint('uq_activity_fingerprint', 'activity')
+    op.drop_column('activity', 'fingerprint')
+```
+
+#### 修改列类型
+
+```python
+def upgrade():
+    # 修改列类型可能需要 USING 子句
+    op.alter_column(
+        'activity',
+        'extra_data',
+        type_=postgresql.JSONB(),
+        existing_type=sa.Text(),
+        postgresql_using='extra_data::jsonb'  # 类型转换
+    )
+
+def downgrade():
+    op.alter_column(
+        'activity',
+        'extra_data',
+        type_=sa.Text(),
+        existing_type=postgresql.JSONB(),
+        postgresql_using='extra_data::text'
+    )
+```
+
+## 数据库模型规范
+
+### 无实体外键约束
+
+项目规范：**不使用数据库层面的外键约束**，只使用应用层的虚拟外键。
+
+```python
+# ✅ 正确：虚拟外键
+from sqlmodel import Field, SQLModel
+
+class Activity(SQLModel, table=True):
+    user_id: str = Field(index=True)  # 只加索引
+    source_config_id: Optional[int] = Field(default=None, index=True)
+
+# ❌ 错误：实体外键
+class Activity(SQLModel, table=True):
+    user_id: str = Field(foreign_key="user.id")  # 禁止使用
+```
+
+**原因：**
+- 提高灵活性，便于数据迁移
+- 避免级联删除的复杂性
+- 应用层控制数据完整性
+
+### JSONB 字段定义
+
+使用 PostgreSQL 的 JSONB 类型存储半结构化数据：
+
+```python
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
+
+class SourceConfig(SQLModel, table=True):
+    config_payload: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB)
+    )
+
+class Activity(SQLModel, table=True):
+    extra_data: dict = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB)
+    )
+```
+
+**JSONB 查询：**
+
+```python
+# 查询 JSONB 字段
+from sqlalchemy import cast, String
+
+statement = select(Activity).where(
+    Activity.extra_data["repo"].as_string() == "backend"
+)
+```
+
+### 向量字段定义
+
+使用 pgvector 扩展存储向量：
+
+```python
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import Column, Index
+
+class ActivityEmbedding(SQLModel, table=True):
+    embedding: List[float] = Field(
+        sa_column=Column(Vector(1536))  # 指定维度
+    )
+    
+    __table_args__ = (
+        # HNSW 向量索引
+        Index(
+            "idx_embedding_vector",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+```
+
+**向量相似度查询：**
+
+```python
+from sqlalchemy import text
+
+# 余弦相似度搜索
+sql = text("""
+    SELECT *, 1 - (embedding <=> :query_embedding) AS similarity
+    FROM activity_embedding
+    WHERE user_id = :user_id
+    ORDER BY embedding <=> :query_embedding
+    LIMIT :top_k
+""")
+```
+
+### 索引设计原则
+
+#### 单列索引
+
+```python
+class Activity(SQLModel, table=True):
+    user_id: str = Field(index=True)  # 用于数据隔离
+    fingerprint: str = Field(unique=True, index=True)  # 唯一索引
+    occurred_at: datetime = Field(index=True)  # 时间范围查询
+```
+
+#### 复合索引
+
+在 `__table_args__` 中定义：
+
+```python
+from sqlalchemy import Index
+
+class Activity(SQLModel, table=True):
+    user_id: str
+    occurred_at: datetime
+    source_type: str
+    
+    __table_args__ = (
+        # 复合索引：用户 + 时间（最常用的查询组合）
+        Index("idx_user_occurred", "user_id", "occurred_at"),
+        
+        # 覆盖索引：包含查询常用的列
+        Index("idx_user_source_time", "user_id", "source_type", "occurred_at"),
+    )
+```
+
+**索引顺序原则：**
+1. 等值查询列在前
+2. 范围查询列在后
+3. 按查询频率排序
+
+### 时间戳字段
+
+使用 `datetime.now`：
+
+```python
+from datetime import datetime
+
+class Activity(SQLModel, table=True):
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(
+        default_factory=datetime.now,
+        sa_column_kwargs={"onupdate": datetime.now}  # 自动更新
+    )
+```
+
+**不使用 `utcnow`：**
+```python
+# ❌ 错误
+created_at: datetime = Field(default_factory=datetime.utcnow)  # 已弃用
+```
+
+## 数据迁移最佳实践
+
+### 生产环境迁移流程
+
+1. **备份数据库**
+   ```bash
+   pg_dump -U user -d dbname > backup_$(date +%Y%m%d).sql
+   ```
+
+2. **在测试环境验证**
+   ```bash
+   # 应用迁移
+   alembic upgrade head
+   
+   # 测试回滚
+   alembic downgrade -1
+   alembic upgrade head
+   ```
+
+3. **生产环境执行**
+   ```bash
+   # 在维护窗口执行
+   alembic upgrade head
+   
+   # 验证数据
+   psql -d dbname -c "SELECT * FROM activity LIMIT 10;"
+   ```
+
+### 大表迁移策略
+
+对于数据量大的表（如 `activity`），使用以下策略：
+
+#### 添加列时先允许 NULL
+
+```python
+def upgrade():
+    # 1. 添加列（允许 NULL）
+    op.add_column('activity', sa.Column('new_field', sa.String(), nullable=True))
+    
+    # 2. 分批填充数据（避免长时间锁表）
+    connection = op.get_bind()
+    batch_size = 10000
+    offset = 0
+    
+    while True:
+        result = connection.execute(
+            text(f"""
+                UPDATE activity 
+                SET new_field = 'computed_value'
+                WHERE id IN (
+                    SELECT id FROM activity 
+                    WHERE new_field IS NULL 
+                    ORDER BY id 
+                    LIMIT {batch_size}
+                )
+            """)
+        )
+        if result.rowcount == 0:
+            break
+        offset += batch_size
+    
+    # 3. 设置为 NOT NULL
+    op.alter_column('activity', 'new_field', nullable=False)
+```
+
+#### 添加索引使用 CONCURRENTLY
+
+```python
+from alembic import op
+
+def upgrade():
+    # 在线创建索引（不锁表）
+    op.create_index(
+        'idx_activity_occurred',
+        'activity',
+        ['occurred_at'],
+        postgresql_concurrently=True
+    )
+
+def downgrade():
+    op.drop_index(
+        'idx_activity_occurred',
+        table_name='activity',
+        postgresql_concurrently=True
+    )
+```
+
+**注意：** 使用 `CONCURRENTLY` 需要在事务外执行：
+
+```python
+from alembic import context
+
+def run_migrations_online():
+    # ... 配置代码 ...
+    
+    with context.begin_transaction():
+        context.run_migrations()
+    
+    # CONCURRENTLY 索引需要在事务外
+    if context.is_offline_mode():
+        return
+    
+    connection = context.get_bind()
+    connection.execute(
+        text("CREATE INDEX CONCURRENTLY IF NOT EXISTS ...")
+    )
+```
+
+### 数据完整性验证
+
+迁移后验证数据：
+
+```python
+def upgrade():
+    # 执行迁移
+    op.add_column(...)
+    
+    # 验证数据
+    connection = op.get_bind()
+    result = connection.execute(
+        text("SELECT COUNT(*) FROM activity WHERE new_field IS NULL")
+    ).scalar()
+    
+    if result > 0:
+        raise Exception(f"Found {result} rows with NULL new_field after migration")
+```
+
+## 常见问题
+
+### Q: 如何处理 pgvector 扩展？
+
+A: 手动在数据库中启用，不通过 Alembic：
+
+```sql
+-- 在数据库中手动执行
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+在 Alembic 脚本中添加注释：
+
+```python
+def upgrade():
+    # 注意：需要先手动执行 CREATE EXTENSION vector;
+    op.create_table('activity_embedding', ...)
+```
+
+### Q: 如何处理枚举类型变更？
+
+A: PostgreSQL 的 ENUM 类型不支持直接修改，需要重建：
+
+```python
+def upgrade():
+    # 1. 创建新的枚举类型
+    op.execute("CREATE TYPE source_type_new AS ENUM ('git', 'dayflow', 'siyuan', 'new_type')")
+    
+    # 2. 修改列类型
+    op.execute("""
+        ALTER TABLE activity 
+        ALTER COLUMN source_type TYPE source_type_new 
+        USING source_type::text::source_type_new
+    """)
+    
+    # 3. 删除旧类型
+    op.execute("DROP TYPE source_type")
+    
+    # 4. 重命名新类型
+    op.execute("ALTER TYPE source_type_new RENAME TO source_type")
+```
+
+### Q: 如何回滚迁移？
+
+```bash
+# 查看当前版本
+alembic current
+
+# 回滚一个版本
+alembic downgrade -1
+
+# 回滚到特定版本
+alembic downgrade <revision_id>
+
+# 回滚所有迁移
+alembic downgrade base
+```

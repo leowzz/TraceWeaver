@@ -30,7 +30,7 @@ git = [
     "gitpython>=3.1.46",
 ]
 sentry = [
-    "sentry-sdk[fastapi]<2.0.0,>=1.40.6",
+    "sentry-sdk[fastapi]>=1.40.6,<3.0.0",
 ]
 vlm = [
     "ollama>=0.6.1",

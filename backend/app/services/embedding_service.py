@@ -23,18 +23,19 @@ class EmbeddingService:
         self.chunker = TimeBlockChunker()
 
         # Create embedder based on configuration
-        if settings.EMBEDDER_PROVIDER == "ollama":
+        if settings.embedder.provider == "ollama":
             self.embedder = OllamaEmbedder(
-                id=settings.EMBEDDER_MODEL_NAME,
-                dimensions=settings.EMBEDDER_DIMENSIONS,
-                host=settings.EMBEDDER_BASE_URL,
+                id=settings.embedder.model_name,
+                dimensions=settings.embedder.dimensions,
+                host=settings.embedder.base_url,
             )
         else:
-            raise ValueError(f"Unsupported embedder provider: {settings.EMBEDDER_PROVIDER}")
+            raise ValueError(f"Unsupported embedder provider: {settings.embedder.provider}")
 
         logger.info(
-            f"Initialized EmbeddingService with {settings.EMBEDDER_PROVIDER} "
-            f"({settings.EMBEDDER_MODEL_NAME})"
+            "Initialized EmbeddingService with {provider} ({model})",
+            provider=settings.embedder.provider,
+            model=settings.embedder.model_name,
         )
 
     def embed_activity(
@@ -107,8 +108,8 @@ class EmbeddingService:
                 chunk_text=chunk.text,
                 chunk_index=chunk.index,
                 chunk_metadata=chunk.metadata or {},
-                embedder_model=settings.EMBEDDER_MODEL_NAME,
-                embedder_provider=settings.EMBEDDER_PROVIDER,
+                embedder_model=settings.embedder.model_name,
+                embedder_provider=settings.embedder.provider,
             )
             session.add(record)
             embedding_records.append(record)
@@ -150,9 +151,8 @@ class EmbeddingService:
                     session.commit()
                     logger.info(f"Committed batch {(i + 1) // batch_size} ({i + 1} activities)")
             except Exception as e:
-                logger.error(
-                    f"Failed to embed activity {activity.id}: {e}",
-                    exc_info=True
+                logger.exception(
+                    f"Failed to embed activity {activity.id}: {e=}",
                 )
                 session.rollback()
                 continue

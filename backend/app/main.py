@@ -21,9 +21,9 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0] if route.tags else ''}-{route.name}"
 
 
-if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
+if settings.monitoring.sentry_dsn and settings.app.environment != "local":
     import sentry_sdk
-    sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
+    sentry_sdk.init(dsn=str(settings.monitoring.sentry_dsn), enable_tracing=True)
 
 
 # @asynccontextmanager
@@ -34,8 +34,8 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    title=settings.app.project_name,
+    openapi_url=f"{settings.app.api_v1_str}/openapi.json",
     generate_unique_id_function=custom_generate_unique_id,
     # lifespan=lifespan
 )
@@ -67,4 +67,4 @@ def health(session: SessionDep):
     return {'status': 'ok', 'date': r}
 
 
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix=settings.app.api_v1_str)

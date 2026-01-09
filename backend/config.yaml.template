@@ -69,6 +69,6 @@ embedder:
   api_base: null
 
 # Dayflow 本地数据库配置
-dayflow_local:
+dayflow:
   db_path: "/Users/leo/Library/Application Support/Dayflow/backups/chunks-2026-01-10_010434.sqlite"
   enabled: true

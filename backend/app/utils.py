@@ -40,42 +40,42 @@ def send_email(
     message = emails.Message(
         subject=subject,
         html=html_content,
-        mail_from=(settings.EMAILS_FROM_NAME, settings.EMAILS_FROM_EMAIL),
+        mail_from=(settings.smtp.from_name, settings.smtp.from_email),
     )
-    smtp_options = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
-    if settings.SMTP_TLS:
+    smtp_options = {"host": settings.smtp.host, "port": settings.smtp.port}
+    if settings.smtp.tls:
         smtp_options["tls"] = True
-    elif settings.SMTP_SSL:
+    elif settings.smtp.ssl:
         smtp_options["ssl"] = True
-    if settings.SMTP_USER:
-        smtp_options["user"] = settings.SMTP_USER
-    if settings.SMTP_PASSWORD:
-        smtp_options["password"] = settings.SMTP_PASSWORD
+    if settings.smtp.user:
+        smtp_options["user"] = settings.smtp.user
+    if settings.smtp.password:
+        smtp_options["password"] = settings.smtp.password
     response = message.send(to=email_to, smtp=smtp_options)
     logger.info(f"send email result: {response}")
 
 
 def generate_test_email(email_to: str) -> EmailData:
-    project_name = settings.PROJECT_NAME
+    project_name = settings.app.project_name
     subject = f"{project_name} - Test email"
     html_content = render_email_template(
         template_name="test_email.html",
-        context={"project_name": settings.PROJECT_NAME, "email": email_to},
+        context={"project_name": settings.app.project_name, "email": email_to},
     )
     return EmailData(html_content=html_content, subject=subject)
 
 
 def generate_reset_password_email(email_to: str, email: str, token: str) -> EmailData:
-    project_name = settings.PROJECT_NAME
+    project_name = settings.app.project_name
     subject = f"{project_name} - Password recovery for user {email}"
-    link = f"{settings.FRONTEND_HOST}/reset-password?token={token}"
+    link = f"{settings.app.frontend_host}/reset-password?token={token}"
     html_content = render_email_template(
         template_name="reset_password.html",
         context={
-            "project_name": settings.PROJECT_NAME,
+            "project_name": settings.app.project_name,
             "username": email,
             "email": email_to,
-            "valid_hours": settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS,
+            "valid_hours": settings.auth.email_reset_token_expire_hours,
             "link": link,
         },
     )
@@ -85,29 +85,29 @@ def generate_reset_password_email(email_to: str, email: str, token: str) -> Emai
 def generate_new_account_email(
     email_to: str, username: str, password: str
 ) -> EmailData:
-    project_name = settings.PROJECT_NAME
+    project_name = settings.app.project_name
     subject = f"{project_name} - New account for user {username}"
     html_content = render_email_template(
         template_name="new_account.html",
         context={
-            "project_name": settings.PROJECT_NAME,
+            "project_name": settings.app.project_name,
             "username": username,
             "password": password,
             "email": email_to,
-            "link": settings.FRONTEND_HOST,
+            "link": settings.app.frontend_host,
         },
     )
     return EmailData(html_content=html_content, subject=subject)
 
 
 def generate_password_reset_token(email: str) -> str:
-    delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)
+    delta = timedelta(hours=settings.auth.email_reset_token_expire_hours)
     now = datetime.now(timezone.utc)
     expires = now + delta
     exp = expires.timestamp()
     encoded_jwt = jwt.encode(
         {"exp": exp, "nbf": now, "sub": email},
-        settings.SECRET_KEY,
+        settings.app.secret_key,
         algorithm=security.ALGORITHM,
     )
     return encoded_jwt
@@ -116,7 +116,7 @@ def generate_password_reset_token(email: str) -> str:
 def verify_password_reset_token(token: str) -> str | None:
     try:
         decoded_token = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
+        token, settings.app.secret_key, algorithms=[security.ALGORITHM]
         )
         return str(decoded_token["sub"])
     except InvalidTokenError:

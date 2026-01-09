@@ -8,6 +8,7 @@ Usage:
 
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -35,7 +36,7 @@ def main():
     parser.add_argument(
         "--db-path",
         type=str,
-        default=settings.DAYFLOW_LOCAL_DB_PATH,
+        default=settings.dayflow.db_path,
         help="Path to Dayflow SQLite database file",
     )
     parser.add_argument(
@@ -81,7 +82,8 @@ def main():
     
     # Fetch all activities
     logger.info("Fetching activities from Dayflow database...")
-    activity_creates = connector.fetch_all_activities()
+    activity_creates = connector.fetch_activities(start_time=datetime(2026,1,9),
+                                                  end_time=datetime.now())
     for ac in activity_creates:
         ac.user_id = user_id
     

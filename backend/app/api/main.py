@@ -15,5 +15,5 @@ api_router.include_router(image_analyses.router)
 api_router.include_router(debug.router)
 
 
-if settings.ENVIRONMENT == "local":
+if settings.app.environment == "local":
     api_router.include_router(private.router)

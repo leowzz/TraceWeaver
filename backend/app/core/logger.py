@@ -53,7 +53,7 @@ logger.add(
     sys.stderr,
     format=LOG_FMT,
     filter=context_info_filter,
-    level=settings.LOG_LEVEL,
+    level=settings.app.log_level,
 )
 
 intercept_handler = InterceptHandler()

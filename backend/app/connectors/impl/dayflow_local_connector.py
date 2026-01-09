@@ -68,7 +68,7 @@ class DayflowLocalConnector(BaseConnector):
         except sqlite3.Error as e:
             raise ConnectionError(f"Failed to access Dayflow database: {e}")
     
-    async def fetch_activities(
+    def fetch_activities(
         self,
         start_time: datetime,
         end_time: datetime,
@@ -94,6 +94,7 @@ class DayflowLocalConnector(BaseConnector):
         WHERE is_deleted = 0
           AND start_ts >= ?
           AND end_ts <= ?
+          AND subcategory != 'Error'
         ORDER BY start_ts
         """
         

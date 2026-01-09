@@ -57,6 +57,17 @@ def main():
         default=None,
         help="Limit number of activities to process (for testing)",
     )
+    parser.add_argument(
+        "--force-regenerate-all",
+        action="store_true",
+        help="Force regenerate embeddings for all activities, even if they already exist",
+    )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default="2020-08-12",
+        help="Start date for fetching activities (YYYY-MM-DD format, default: 2020-08-12)",
+    )
     
     args = parser.parse_args()
     
@@ -65,6 +76,13 @@ def main():
         user_id = UUID(args.user_id)
     except ValueError:
         logger.error(f"Invalid user ID format: {args.user_id}")
+        sys.exit(1)
+    
+    # Parse start date
+    try:
+        start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
+    except ValueError:
+        logger.error(f"Invalid start date format: {args.start_date}. Expected YYYY-MM-DD format")
         sys.exit(1)
     
     # Initialize connector
@@ -81,8 +99,8 @@ def main():
         sys.exit(1)
     
     # Fetch all activities
-    logger.info("Fetching activities from Dayflow database...")
-    activity_creates = connector.fetch_activities(start_time=datetime(2026,1,9),
+    logger.info(f"Fetching activities from Dayflow database (from {start_date.date()})...")
+    activity_creates = connector.fetch_activities(start_time=start_date,
                                                   end_time=datetime.now())
     for ac in activity_creates:
         ac.user_id = user_id
@@ -97,7 +115,10 @@ def main():
         logger.warning("No activities found in database")
         return
     
-    # Save activities to database with batch validation
+    # Initialize force_regenerate_ids outside session scope
+    force_regenerate_ids = set()
+    
+    # Save activities to database with upsert logic
     with Session(engine) as session:
         # Set user_id for all activities
         for activity_create in activity_creates:
@@ -105,44 +126,74 @@ def main():
         
         # Batch query: get all existing fingerprints
         fingerprints = [ac.fingerprint for ac in activity_creates]
-        existing_activities = session.exec(
-            select(Activity).where(Activity.fingerprint.in_(fingerprints))
-        ).all()
+        existing_activities_dict = {
+            act.fingerprint: act
+            for act in session.exec(
+                select(Activity).where(Activity.fingerprint.in_(fingerprints))
+            ).all()
+        }
         
-        # Build a set of existing fingerprints for fast lookup
-        existing_fingerprints = {act.fingerprint for act in existing_activities}
-        
-        # Separate new activities from existing ones
-        new_activity_creates = [
-            ac for ac in activity_creates 
-            if ac.fingerprint not in existing_fingerprints
-        ]
-        
-        logger.info(
-            f"Found {len(existing_activities)} existing activities, "
-            f"{len(new_activity_creates)} new activities to create"
-        )
-        
-        # Batch create new activities
+        # Track activities by status
         new_activities = []
-        for activity_create in new_activity_creates:
-            activity = Activity.model_validate(activity_create)
-            session.add(activity)
-            new_activities.append(activity)
+        updated_activities = []
+        unchanged_activities = []
         
+        # Process each activity create
+        for activity_create in activity_creates:
+            existing_activity = existing_activities_dict.get(activity_create.fingerprint)
+            
+            if existing_activity is None:
+                # New activity: create it
+                activity = Activity.model_validate(activity_create)
+                session.add(activity)
+                new_activities.append(activity)
+            else:
+                # Existing activity: check if content changed
+                content_changed = (
+                    existing_activity.title != activity_create.title
+                    or existing_activity.content != activity_create.content
+                    or existing_activity.extra_data != activity_create.extra_data
+                )
+                
+                if content_changed:
+                    # Update existing activity
+                    existing_activity.title = activity_create.title
+                    existing_activity.content = activity_create.content
+                    existing_activity.extra_data = activity_create.extra_data
+                    existing_activity.updated_at = datetime.now()
+                    session.add(existing_activity)
+                    updated_activities.append(existing_activity)
+                    force_regenerate_ids.add(existing_activity.id)
+                    logger.debug(
+                        f"Updated activity {existing_activity.id} "
+                        f"(fingerprint: {activity_create.fingerprint[:8]}...)"
+                    )
+                else:
+                    # No changes: keep existing
+                    unchanged_activities.append(existing_activity)
+        
+        # Commit all changes
         session.commit()
         
         # Refresh to get IDs for new activities
         for activity in new_activities:
             session.refresh(activity)
         
-        # Combine existing and new activities
-        activities = list(existing_activities) + new_activities
+        # Combine all activities
+        activities = new_activities + updated_activities + unchanged_activities
         
         logger.info(
-            f"Saved {len(new_activities)} new activities to database "
+            f"Activity upsert completed: "
+            f"{len(new_activities)} new, "
+            f"{len(updated_activities)} updated, "
+            f"{len(unchanged_activities)} unchanged "
             f"(total: {len(activities)} activities)"
         )
+        
+        if force_regenerate_ids:
+            logger.info(
+                f"{len(force_regenerate_ids)} activities marked for embedding regeneration"
+            )
     
     # Initialize embedding service
     logger.info("Initializing embedding service...")
@@ -158,11 +209,22 @@ def main():
             )
         ).all()
         
+        # If --force-regenerate-all is set, add all activity IDs to force_regenerate_ids
+        if args.force_regenerate_all:
+            force_regenerate_ids.clear()
+            force_regenerate_ids.update(
+                activity.id for activity in activities if activity.id is not None
+            )
+            logger.info(
+                f"Force regenerate all: {len(force_regenerate_ids)} activities will be re-embedded"
+            )
+        
         success_count = embedding_service.embed_activities_batch(
             activities,
             user_id,
             session,
             batch_size=args.batch_size,
+            force_regenerate_ids=force_regenerate_ids,
         )
     
     logger.info(f"✅ Embedding completed: {success_count}/{len(activities)} activities embedded")

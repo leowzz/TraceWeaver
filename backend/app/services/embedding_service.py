@@ -4,7 +4,7 @@ from uuid import UUID
 
 from agno.knowledge.embedder.ollama import OllamaEmbedder
 from loguru import logger
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.models.activity import Activity
@@ -43,6 +43,7 @@ class EmbeddingService:
         activity: Activity,
         user_id: UUID,
         session: Session,
+        force_regenerate: bool = False,
     ) -> list[ActivityEmbedding]:
         """Embed a single activity into vector chunks.
 
@@ -50,10 +51,35 @@ class EmbeddingService:
             activity: Activity to embed
             user_id: User ID for data isolation
             session: Database session
+            force_regenerate: If True, delete existing embeddings and regenerate
 
         Returns:
-            List of ActivityEmbedding records created
+            List of ActivityEmbedding records created (empty if skipped)
         """
+        # Check if embeddings already exist
+        existing_embeddings = session.exec(
+            select(ActivityEmbedding).where(
+                ActivityEmbedding.activity_id == activity.id
+            )
+        ).all()
+
+        # If embeddings exist and not forcing regeneration, skip
+        if existing_embeddings and not force_regenerate:
+            logger.info(
+                f"Activity {activity.id} already has {len(existing_embeddings)} embeddings, skipping"
+            )
+            return []
+
+        # If forcing regeneration, delete old embeddings
+        if existing_embeddings and force_regenerate:
+            deleted_count = len(existing_embeddings)
+            for embedding in existing_embeddings:
+                session.delete(embedding)
+            session.commit()
+            logger.info(
+                f"Deleted {deleted_count} old embeddings for updated activity {activity.id}"
+            )
+
         # Extract detailed_summary for chunking
         detailed_summary = activity.extra_data.get("detailed_summary", "")
 
@@ -126,6 +152,7 @@ class EmbeddingService:
         user_id: UUID,
         session: Session,
         batch_size: int | None = None,
+        force_regenerate_ids: set[int] | None = None,
     ) -> int:
         """Embed multiple activities in batches.
 
@@ -134,16 +161,19 @@ class EmbeddingService:
             user_id: User ID for data isolation
             session: Database session
             batch_size: Batch size for committing (default: 10)
+            force_regenerate_ids: Set of activity IDs that should be force regenerated
 
         Returns:
             Number of activities successfully embedded
         """
         batch_size = batch_size or 10
+        force_regenerate_ids = force_regenerate_ids or set()
         success_count = 0
 
         for i, activity in enumerate(activities):
             try:
-                self.embed_activity(activity, user_id, session)
+                force_regenerate = activity.id in force_regenerate_ids
+                self.embed_activity(activity, user_id, session, force_regenerate=force_regenerate)
                 success_count += 1
 
                 # Commit in batches

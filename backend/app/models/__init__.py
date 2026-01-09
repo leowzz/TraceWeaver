@@ -1,5 +1,6 @@
 from app.models.user import *
 from app.models.activity import Activity
+from app.models.activity_embedding import ActivityEmbedding
 from app.models.source_config import SourceConfig
 from app.models.enums import AnalysisStatus, SourceType, LLMProvider
 from app.models.llm_prompt import LLMPrompt

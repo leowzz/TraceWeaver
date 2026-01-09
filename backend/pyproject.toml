@@ -22,6 +22,8 @@ dependencies = [
     "pyjwt<3.0.0,>=2.8.0",
     "loguru>=0.7.3",
     "redis>=5.0.0",
+    "pyyaml>=6.0.0",
+    "pgvector>=0.3.0",
 ]
 [project.optional-dependencies]
 git = [

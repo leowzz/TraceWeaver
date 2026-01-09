@@ -10,3 +10,4 @@ node_modules/
 .env
 !frontend/.env
 !.cursor
+backend/config.yaml

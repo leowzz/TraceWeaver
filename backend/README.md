@@ -5,6 +5,123 @@
 * [Docker](https://www.docker.com/).
 * [uv](https://docs.astral.sh/uv/) for Python package and environment management.
 
+## Configuration
+
+TraceWeaver 使用 YAML 格式的配置文件来管理应用设置。
+
+### 本地开发配置
+
+1. **复制配置模板**
+
+在 `backend/` 目录下，将 `config.yaml.template` 复制为 `config.yaml`：
+
+```console
+$ cd backend
+$ cp config.yaml.template config.yaml
+```
+
+2. **编辑配置文件**
+
+打开 `config.yaml` 并填写必要的配置项：
+
+```yaml
+# 应用配置
+app:
+  project_name: "TraceWeaver"
+  environment: "local"
+  secret_key: "your-secret-key-here"  # 生产环境请使用强密钥
+  frontend_host: "http://localhost:5173"
+
+# 数据库配置
+database:
+  server: "localhost"  # Docker 环境会自动覆盖为 "db"
+  port: 5432
+  user: "postgres"
+  password: "your-password"
+  name: "traceweaver"
+
+# 认证配置
+auth:
+  first_superuser: "admin@example.com"
+  first_superuser_password: "changethis"
+
+# 其他配置项...
+```
+
+3. **配置优先级**
+
+配置的优先级（从高到低）：
+- 环境变量
+- YAML 配置文件 (`backend/config.yaml`)
+- 默认值
+
+这意味着你可以在 YAML 中设置基础配置，然后通过环境变量覆盖特定的值。
+
+### Docker 部署配置
+
+在 Docker 环境中，配置文件会被挂载到容器内部：
+
+```yaml
+# docker-compose.yml
+backend:
+  volumes:
+    - ./backend/config.yaml:/app/config.yaml:ro
+  environment:
+    # 覆盖 YAML 配置中的数据库主机名
+    - POSTGRES_SERVER=db
+```
+
+确保在部署前：
+1. 创建 `backend/config.yaml` 文件
+2. 填写生产环境的配置值
+3. 使用强密钥和安全的密码
+4. 不要将 `config.yaml` 提交到版本控制系统（已在 .gitignore 中）
+
+### 配置结构
+
+配置文件按功能模块分组：
+
+- **app**: 应用基础配置（项目名、环境、密钥等）
+- **database**: 数据库连接配置
+- **redis**: Redis 连接配置
+- **celery**: 异步任务队列配置
+- **smtp**: 邮件服务配置
+- **auth**: 认证相关配置
+- **monitoring**: 监控配置（Sentry 等）
+- **embedder**: 向量化模型配置（用于语义搜索和 RAG）
+
+详细的配置项说明请参考 `config.yaml.template` 文件中的注释。
+
+### Embedder 配置说明
+
+TraceWeaver 使用 [Agno 框架](https://docs.agno.com/) 进行文本向量化，支持多种 Embedding 提供商：
+
+- **ollama**: 本地或远程 Ollama 服务（隐私保护，开源模型）
+- **openai**: OpenAI API（高质量，需要 API Key）
+- **huggingface**: HuggingFace 模型
+- **gemini**: Google Gemini API
+- **cohere**: Cohere API
+
+默认配置使用远程 Ollama 服务上的 `milkey/m3e:base-f16` 模型（768 维向量）。如需更改：
+
+```yaml
+embedder:
+  provider: "ollama"
+  model_name: "milkey/m3e:base-f16"
+  dimensions: 768
+  base_url: "http://192.168.177.20:11434"  # Ollama 服务地址
+```
+
+如果使用 OpenAI：
+
+```yaml
+embedder:
+  provider: "openai"
+  model_name: "text-embedding-3-small"
+  dimensions: 1536
+  api_key: "sk-your-api-key-here"
+```
+
 ## Docker Compose
 
 Start the local development environment with Docker Compose following the guide in [../development.md](../development.md).

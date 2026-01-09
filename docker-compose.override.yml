@@ -80,11 +80,15 @@ services:
     # TODO: remove once coverage is done locally
     volumes:
       - ./backend/htmlcov:/app/htmlcov
+      - ./backend/config.yaml:/app/config.yaml:ro
     environment:
+      # 本地开发环境覆盖邮件配置
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
+      # 覆盖数据库主机名
+      POSTGRES_SERVER: "db"
 
   mailcatcher:
     image: schickling/mailcatcher

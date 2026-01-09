@@ -1,0 +1,74 @@
+# TraceWeaver 配置文件模板
+# 复制此文件为 config.yaml 并填写实际值
+
+# 应用配置
+app:
+  project_name: "TraceWeaver"
+  environment: "local"  # local, staging, production
+  secret_key: "changethis"  # 生产环境请使用强密钥
+  api_v1_str: "/api/v1"
+  access_token_expire_minutes: 11520  # 8 天
+  frontend_host: "http://localhost:5173"
+  cors_origins: []  # 例如: ["http://localhost:3000", "https://example.com"]
+  log_level: "DEBUG"
+
+# 数据库配置
+database:
+  server: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "changethis"
+  name: "traceweaver"
+
+# Redis 配置
+redis:
+  url: "redis://localhost:6379/0"
+
+# Celery 配置
+celery:
+  worker_concurrency: 2
+  tmp_data_dir: null
+
+# 邮件配置
+smtp:
+  host: null
+  port: 587
+  user: null
+  password: null
+  tls: true
+  ssl: false
+  from_email: null
+  from_name: null
+
+# 认证配置
+auth:
+  email_reset_token_expire_hours: 48
+  email_test_user: "test@example.com"
+  first_superuser: "admin@example.com"
+  first_superuser_password: "changethis"
+
+# 监控配置
+monitoring:
+  sentry_dsn: null
+
+# Embedding 配置（向量化）
+embedder:
+  provider: "ollama"  # openai, ollama, huggingface, gemini, cohere
+  model_name: "milkey/m3e:base-f16"
+  dimensions: 768  # m3e-base 模型的向量维度
+  
+  # Ollama 配置
+  base_url: "http://192.168.177.20:11434"
+  
+  # 性能配置
+  batch_size: 100
+  enable_batch: true
+  
+  # API 配置（使用云端模型时需要）
+  api_key: null
+  api_base: null
+
+# Dayflow 本地数据库配置
+dayflow_local:
+  db_path: "/Users/leo/Library/Application Support/Dayflow/backups/chunks-2026-01-10_010434.sqlite"
+  enabled: true

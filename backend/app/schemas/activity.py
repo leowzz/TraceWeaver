@@ -1,5 +1,6 @@
 """Activity Pydantic schemas for API validation."""
 
+from typing import Optional
 import uuid
 from datetime import datetime
 
@@ -26,7 +27,7 @@ class ActivityBase(BaseModel):
 class ActivityCreate(ActivityBase):
     """Schema for creating a new activity."""
 
-    user_id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
     source_config_id: int | None = None
     fingerprint: str = Field(..., description="SHA256 hash for deduplication")
 

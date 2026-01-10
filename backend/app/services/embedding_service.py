@@ -30,7 +30,9 @@ class EmbeddingService:
                 host=settings.embedder.base_url,
             )
         else:
-            raise ValueError(f"Unsupported embedder provider: {settings.embedder.provider}")
+            raise ValueError(
+                f"Unsupported embedder provider: {settings.embedder.provider}"
+            )
 
         logger.info(
             "Initialized EmbeddingService with {provider} ({model})",
@@ -97,11 +99,14 @@ class EmbeddingService:
         else:
             # Fallback: use title and content as single chunk
             from app.services.chunkers.base import Chunk
-            chunks = [Chunk(
-                text=f"{activity.title}\n{activity.content or ''}",
-                index=0,
-                metadata=chunk_metadata
-            )]
+
+            chunks = [
+                Chunk(
+                    text=f"{activity.title}\n{activity.content or ''}",
+                    index=0,
+                    metadata=chunk_metadata,
+                )
+            ]
 
         if not chunks:
             logger.warning(f"No chunks generated for activity {activity.id}")
@@ -173,13 +178,17 @@ class EmbeddingService:
         for i, activity in enumerate(activities):
             try:
                 force_regenerate = activity.id in force_regenerate_ids
-                self.embed_activity(activity, user_id, session, force_regenerate=force_regenerate)
+                self.embed_activity(
+                    activity, user_id, session, force_regenerate=force_regenerate
+                )
                 success_count += 1
 
                 # Commit in batches
                 if (i + 1) % batch_size == 0:
                     session.commit()
-                    logger.info(f"Committed batch {(i + 1) // batch_size} ({i + 1} activities)")
+                    logger.info(
+                        f"Committed batch {(i + 1) // batch_size} ({i + 1} activities)"
+                    )
             except Exception as e:
                 logger.exception(
                     f"Failed to embed activity {activity.id}: {e=}",

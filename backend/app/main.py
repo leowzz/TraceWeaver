@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.routing import APIRoute
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -12,9 +12,8 @@ from app.core.exceptions import (
     http_exception_handler,
     validation_exception_handler,
 )
-from app.core.middleware import ContextMiddleware
 from app.core.logger import logger
-from contextlib import asynccontextmanager
+from app.core.middleware import ContextMiddleware
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -23,6 +22,7 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 
 if settings.monitoring.sentry_dsn and settings.app.environment != "local":
     import sentry_sdk
+
     sentry_sdk.init(dsn=str(settings.monitoring.sentry_dsn), enable_tracing=True)
 
 
@@ -59,12 +59,13 @@ if settings.all_cors_origins:
     )
 
 
-@app.get('/health', tags=['health'])
+@app.get("/health", tags=["health"])
 def health(session: SessionDep):
-    from sqlalchemy import select, func
+    from sqlalchemy import func, select
+
     r = session.exec(select(func.now())).scalar()
     logger.info(f"{r=}")
-    return {'status': 'ok', 'date': r}
+    return {"status": "ok", "date": r}
 
 
 app.include_router(api_router, prefix=settings.app.api_v1_str)

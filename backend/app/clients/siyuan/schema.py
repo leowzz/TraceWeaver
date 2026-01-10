@@ -12,10 +12,8 @@
 """
 
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
-
 
 # ============================================================================
 # Enums
@@ -46,24 +44,24 @@ class BlockType(str, Enum):
     widget   挂件块 (widget block)
     """
 
-    AUDIO = "audio"                # 音频块
-    ATTRIBUTE_TABLE = "av"         # 属性表
-    QUOTE = "b"                    # 引述块
-    CODE = "c"                     # 代码块
-    DOCUMENT = "d"                 # 文档块
-    HEADING = "h"                  # 标题块
-    HTML = "html"                  # HTML 块
-    LIST_ITEM = "i"                # 列表项
-    IFRAME = "iframe"              # iframe 块
-    LIST = "l"                     # 列表块
-    FORMULA = "m"                  # 公式块
-    PARAGRAPH = "p"                # 段落块
-    QUERY_EMBED = "query_embed"    # 嵌入块
-    SUPER = "s"                    # 超级块
-    TABLE = "t"                    # 表格块
-    DIVIDER = "tb"                 # 分割线
-    VIDEO = "video"                # 视频块
-    WIDGET = "widget"              # 挂件块
+    AUDIO = "audio"  # 音频块
+    ATTRIBUTE_TABLE = "av"  # 属性表
+    QUOTE = "b"  # 引述块
+    CODE = "c"  # 代码块
+    DOCUMENT = "d"  # 文档块
+    HEADING = "h"  # 标题块
+    HTML = "html"  # HTML 块
+    LIST_ITEM = "i"  # 列表项
+    IFRAME = "iframe"  # iframe 块
+    LIST = "l"  # 列表块
+    FORMULA = "m"  # 公式块
+    PARAGRAPH = "p"  # 段落块
+    QUERY_EMBED = "query_embed"  # 嵌入块
+    SUPER = "s"  # 超级块
+    TABLE = "t"  # 表格块
+    DIVIDER = "tb"  # 分割线
+    VIDEO = "video"  # 视频块
+    WIDGET = "widget"  # 挂件块
 
 
 class BlockSubtype(str, Enum):
@@ -182,24 +180,30 @@ class BlockSchema(BaseModel):
     """
 
     id: str = Field(..., description="内容块 ID")
-    parent_id: Optional[str] = Field(None, description="上级块的 ID，文档块该字段为空")
-    root_id: Optional[str] = Field(None, description="顶层块的 ID，即文档块 ID")
-    hash: Optional[str] = Field(None, description="content 字段的 SHA256 校验和")
+    parent_id: str | None = Field(None, description="上级块的 ID，文档块该字段为空")
+    root_id: str | None = Field(None, description="顶层块的 ID，即文档块 ID")
+    hash: str | None = Field(None, description="content 字段的 SHA256 校验和")
     box: str = Field(..., description="笔记本 ID")
     path: str = Field(..., description="内容块所在文档路径")
     hpath: str = Field(..., description="人类可读的内容块所在文档路径")
-    name: Optional[str] = Field(None, description="内容块名称")
-    alias: Optional[str] = Field(None, description="内容块别名")
-    memo: Optional[str] = Field(None, description="内容块备注")
-    tag: Optional[str] = Field(None, description="标签：非文档块为块内包含的标签，文档块为文档的标签")
+    name: str | None = Field(None, description="内容块名称")
+    alias: str | None = Field(None, description="内容块别名")
+    memo: str | None = Field(None, description="内容块备注")
+    tag: str | None = Field(
+        None, description="标签：非文档块为块内包含的标签，文档块为文档的标签"
+    )
     content: str = Field(..., description="去除了 Markdown 标记符的文本")
-    fcontent: Optional[str] = Field(None, description="第一个子块去除了 Markdown 标记符的文本 (1.9.9 添加)")
+    fcontent: str | None = Field(
+        None, description="第一个子块去除了 Markdown 标记符的文本 (1.9.9 添加)"
+    )
     markdown: str = Field(..., description="包含完整 Markdown 标记符的文本")
-    length: Optional[int] = Field(None, description="fcontent 字段文本长度")
+    length: int | None = Field(None, description="fcontent 字段文本长度")
     type: str = Field(..., description="内容块主类型，参考 BlockType 枚举")
-    subtype: Optional[str] = Field(None, description="内容块次类型，参考 BlockSubtype 枚举，默认为空字符串")
-    ial: Optional[str] = Field(None, description="内联属性列表，形如 {: name=\"value\"}")
-    sort: Optional[int] = Field(None, description="排序权重，数值越小排序越靠前")
+    subtype: str | None = Field(
+        None, description="内容块次类型，参考 BlockSubtype 枚举，默认为空字符串"
+    )
+    ial: str | None = Field(None, description='内联属性列表，形如 {: name="value"}')
+    sort: int | None = Field(None, description="排序权重，数值越小排序越靠前")
     created: str = Field(..., description="创建时间，格式: YYYYMMDDHHmmss")
     updated: str = Field(..., description="更新时间，格式: YYYYMMDDHHmmss")
 
@@ -212,16 +216,18 @@ class RefSchema(BaseModel):
 
     id: str = Field(..., description="引用 ID")
     def_block_id: str = Field(..., description="被引用块的块 ID")
-    def_block_parent_id: Optional[str] = Field(None, description="被引用块的双亲节点的块 ID")
-    def_block_root_id: Optional[str] = Field(None, description="被引用块所在文档的 ID")
-    def_block_path: Optional[str] = Field(None, description="被引用块所在文档的路径")
+    def_block_parent_id: str | None = Field(
+        None, description="被引用块的双亲节点的块 ID"
+    )
+    def_block_root_id: str | None = Field(None, description="被引用块所在文档的 ID")
+    def_block_path: str | None = Field(None, description="被引用块所在文档的路径")
     block_id: str = Field(..., description="引用所在内容块 ID")
-    root_id: Optional[str] = Field(None, description="引用所在文档块 ID")
+    root_id: str | None = Field(None, description="引用所在文档块 ID")
     box: str = Field(..., description="引用所在笔记本 ID")
     path: str = Field(..., description="引用所在文档块路径")
-    content: Optional[str] = Field(None, description="引用锚文本")
-    markdown: Optional[str] = Field(None, description="包含完整 Markdown 标记符的文本")
-    type: Optional[str] = Field(None, description="引用类型，参考 RefType 枚举")
+    content: str | None = Field(None, description="引用锚文本")
+    markdown: str | None = Field(None, description="包含完整 Markdown 标记符的文本")
+    type: str | None = Field(None, description="引用类型，参考 RefType 枚举")
 
 
 class AttributeSchema(BaseModel):
@@ -232,12 +238,12 @@ class AttributeSchema(BaseModel):
 
     id: str = Field(..., description="属性 ID")
     name: str = Field(..., description="属性名称")
-    value: Optional[str] = Field(None, description="属性值")
-    type: Optional[str] = Field(None, description="属性类型，参考 AttributeType 枚举")
+    value: str | None = Field(None, description="属性值")
+    type: str | None = Field(None, description="属性类型，参考 AttributeType 枚举")
     block_id: str = Field(..., description="块 ID")
-    root_id: Optional[str] = Field(None, description="文档 ID")
+    root_id: str | None = Field(None, description="文档 ID")
     box: str = Field(..., description="笔记本 ID")
-    path: Optional[str] = Field(None, description="文档文件路径")
+    path: str | None = Field(None, description="文档文件路径")
 
 
 class AssetSchema(BaseModel):
@@ -247,14 +253,14 @@ class AssetSchema(BaseModel):
     """
 
     id: str = Field(..., description="引用 ID")
-    block_id: Optional[str] = Field(None, description="块 ID")
-    root_id: Optional[str] = Field(None, description="文档 ID")
+    block_id: str | None = Field(None, description="块 ID")
+    root_id: str | None = Field(None, description="文档 ID")
     box: str = Field(..., description="笔记本 ID")
-    docpath: Optional[str] = Field(None, description="文档路径")
+    docpath: str | None = Field(None, description="文档路径")
     path: str = Field(..., description="资源文件路径")
-    name: Optional[str] = Field(None, description="资源文件名")
-    title: Optional[str] = Field(None, description="资源标题")
-    hash: Optional[str] = Field(None, description="资源哈希值")
+    name: str | None = Field(None, description="资源文件名")
+    title: str | None = Field(None, description="资源标题")
+    hash: str | None = Field(None, description="资源哈希值")
 
 
 class FileAnnotationRefSchema(BaseModel):
@@ -266,12 +272,12 @@ class FileAnnotationRefSchema(BaseModel):
     id: str = Field(..., description="引用 ID")
     file_path: str = Field(..., description="关联文件路径")
     annotation_id: str = Field(..., description="被引用注释 ID")
-    block_id: Optional[str] = Field(None, description="引用所在内容块 ID")
-    root_id: Optional[str] = Field(None, description="引用所在文档块 ID")
-    box: Optional[str] = Field(None, description="引用所在笔记本 ID")
-    path: Optional[str] = Field(None, description="引用所在文档块路径")
-    content: Optional[str] = Field(None, description="引用锚文本")
-    type: Optional[str] = Field(None, description="注释类型")
+    block_id: str | None = Field(None, description="引用所在内容块 ID")
+    root_id: str | None = Field(None, description="引用所在文档块 ID")
+    box: str | None = Field(None, description="引用所在笔记本 ID")
+    path: str | None = Field(None, description="引用所在文档块路径")
+    content: str | None = Field(None, description="引用锚文本")
+    type: str | None = Field(None, description="注释类型")
 
 
 class SpanSchema(BaseModel):
@@ -282,13 +288,13 @@ class SpanSchema(BaseModel):
 
     id: str = Field(..., description="行内元素 ID")
     block_id: str = Field(..., description="元素所在内容块 ID")
-    root_id: Optional[str] = Field(None, description="元素所在文档块 ID")
+    root_id: str | None = Field(None, description="元素所在文档块 ID")
     box: str = Field(..., description="元素所在笔记本 ID")
-    path: Optional[str] = Field(None, description="元素所在文档块路径")
-    content: Optional[str] = Field(None, description="元素内容")
-    markdown: Optional[str] = Field(None, description="包含完整 Markdown 标记符的元素内容")
+    path: str | None = Field(None, description="元素所在文档块路径")
+    content: str | None = Field(None, description="元素内容")
+    markdown: str | None = Field(None, description="包含完整 Markdown 标记符的元素内容")
     type: str = Field(..., description="元素类型，参考 SpanType 枚举")
-    ial: Optional[str] = Field(None, description="元素样式（内联属性列表）")
+    ial: str | None = Field(None, description="元素样式（内联属性列表）")
 
 
 # ============================================================================
@@ -343,4 +349,3 @@ class BlockInfo(BaseModel):
     """Block information (returned by block operations)."""
 
     id: str = Field(..., description="Block ID")
-

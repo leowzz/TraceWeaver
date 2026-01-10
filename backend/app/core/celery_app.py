@@ -3,7 +3,7 @@
 from celery import Celery
 
 from app.core.config import settings
-from app.core.logger import logger # noqa
+from app.core.logger import logger  # noqa
 
 # Create Celery app with Redis broker
 celery_app = Celery(

@@ -243,8 +243,8 @@ function DebugVectorSearch() {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <div className="text-xs text-muted-foreground">Score:</div>
-                              <Progress 
-                                value={item.similarity * 100} 
+                              <Progress
+                                value={item.similarity * 100}
                                 className="flex-1 h-2"
                               />
                             </div>

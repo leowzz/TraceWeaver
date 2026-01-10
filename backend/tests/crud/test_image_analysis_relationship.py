@@ -24,9 +24,7 @@ def sample_llm_prompt(db: Session) -> LLMPrompt:
 
 
 @pytest.fixture
-def sample_image_analysis(
-    db: Session, sample_llm_prompt: LLMPrompt
-) -> ImageAnalysis:
+def sample_image_analysis(db: Session, sample_llm_prompt: LLMPrompt) -> ImageAnalysis:
     """Create a sample ImageAnalysis for testing."""
     analysis_data = {
         "img_path": "/test/image.jpg",
@@ -53,7 +51,7 @@ class TestImageAnalysisToLLMPrompt:
             .options(selectinload(ImageAnalysis.llm_prompt))
         )
         analysis = db.exec(statement).first()
-        
+
         assert analysis is not None
         assert analysis.llm_prompt is not None
         assert analysis.llm_prompt_id == analysis.llm_prompt.id
@@ -70,7 +68,7 @@ class TestImageAnalysisToLLMPrompt:
         }
         analysis = image_analysis_crud.create(db, analysis_data)
         db.refresh(analysis)
-        
+
         # The relationship should handle non-existent foreign key gracefully
         # In SQLModel, this might return None or raise an error depending on configuration
         # We test that it doesn't crash
@@ -81,7 +79,10 @@ class TestLLMPromptToImageAnalysis:
     """Test LLMPrompt -> ImageAnalysis relationship."""
 
     def test_llm_prompt_has_image_analyses(
-        self, db: Session, sample_llm_prompt: LLMPrompt, sample_image_analysis: ImageAnalysis
+        self,
+        db: Session,
+        sample_llm_prompt: LLMPrompt,
+        sample_image_analysis: ImageAnalysis,
     ):
         """Test that LLMPrompt can access its related ImageAnalysis list."""
         # Load with relationship using selectinload
@@ -91,7 +92,7 @@ class TestLLMPromptToImageAnalysis:
             .options(selectinload(LLMPrompt.image_analyses))
         )
         prompt = db.exec(statement).first()
-        
+
         assert prompt is not None
         assert len(prompt.image_analyses) >= 1
         analysis_ids = [a.id for a in prompt.image_analyses]
@@ -106,7 +107,7 @@ class TestLLMPromptToImageAnalysis:
             "is_active": True,
         }
         prompt = llm_prompt_crud.create(db, prompt_data)
-        
+
         # Load with relationship using selectinload
         statement = (
             select(LLMPrompt)
@@ -114,7 +115,7 @@ class TestLLMPromptToImageAnalysis:
             .options(selectinload(LLMPrompt.image_analyses))
         )
         loaded_prompt = db.exec(statement).first()
-        
+
         assert loaded_prompt is not None
         assert len(loaded_prompt.image_analyses) == 0
 
@@ -137,10 +138,10 @@ class TestLLMPromptToImageAnalysis:
             "model_name": "qwen3-vl:2B",
             "status": AnalysisStatus.COMPLETED,
         }
-        
+
         analysis1 = image_analysis_crud.create(db, analysis1_data)
         analysis2 = image_analysis_crud.create(db, analysis2_data)
-        
+
         # Load with relationship using selectinload
         statement = (
             select(LLMPrompt)
@@ -148,7 +149,7 @@ class TestLLMPromptToImageAnalysis:
             .options(selectinload(LLMPrompt.image_analyses))
         )
         prompt = db.exec(statement).first()
-        
+
         assert prompt is not None
         assert len(prompt.image_analyses) >= 2
         analysis_ids = [a.id for a in prompt.image_analyses]
@@ -160,7 +161,10 @@ class TestBidirectionalRelationship:
     """Test bidirectional relationship between ImageAnalysis and LLMPrompt."""
 
     def test_bidirectional_relationship_consistency(
-        self, db: Session, sample_llm_prompt: LLMPrompt, sample_image_analysis: ImageAnalysis
+        self,
+        db: Session,
+        sample_llm_prompt: LLMPrompt,
+        sample_image_analysis: ImageAnalysis,
     ):
         """Test that both sides of the relationship are consistent."""
         # Load ImageAnalysis with relationship
@@ -170,7 +174,7 @@ class TestBidirectionalRelationship:
             .options(selectinload(ImageAnalysis.llm_prompt))
         )
         analysis = db.exec(analysis_stmt).first()
-        
+
         # Load LLMPrompt with relationship
         prompt_stmt = (
             select(LLMPrompt)
@@ -178,30 +182,33 @@ class TestBidirectionalRelationship:
             .options(selectinload(LLMPrompt.image_analyses))
         )
         prompt = db.exec(prompt_stmt).first()
-        
+
         assert analysis is not None
         assert prompt is not None
-        
+
         # Test ImageAnalysis -> LLMPrompt
         assert analysis.llm_prompt is not None
         assert analysis.llm_prompt.id == prompt.id
-        
+
         # Test LLMPrompt -> ImageAnalysis
         analysis_ids = [a.id for a in prompt.image_analyses]
         assert analysis.id in analysis_ids
-        
+
         # Test consistency
         assert analysis.llm_prompt.name == prompt.name
         assert analysis.llm_prompt_id == prompt.id
 
     def test_relationship_after_update(
-        self, db: Session, sample_llm_prompt: LLMPrompt, sample_image_analysis: ImageAnalysis
+        self,
+        db: Session,
+        sample_llm_prompt: LLMPrompt,
+        sample_image_analysis: ImageAnalysis,
     ):
         """Test that relationship persists after updates."""
         # Update the prompt
         updated_data = {"name": "Updated Prompt Name"}
         updated_prompt = llm_prompt_crud.update(db, sample_llm_prompt.id, updated_data)
-        
+
         # Load analysis with relationship
         statement = (
             select(ImageAnalysis)
@@ -209,9 +216,8 @@ class TestBidirectionalRelationship:
             .options(selectinload(ImageAnalysis.llm_prompt))
         )
         analysis = db.exec(statement).first()
-        
+
         assert analysis is not None
         assert analysis.llm_prompt is not None
         assert analysis.llm_prompt.name == "Updated Prompt Name"
         assert analysis.llm_prompt.id == updated_prompt.id
-

@@ -90,24 +90,24 @@ graph TB
 ```python
 class Activity(SQLModel, table=True):
     """统一活动模型 - 所有数据源的标准化表示"""
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
     source_config_id: uuid.UUID = Field(foreign_key="source_config.id")
-    
+
     # 核心字段
     source_type: str = Field(index=True)  # "git", "dayflow", "siyuan"
     source_id: str = Field(index=True)     # 来源方的唯一ID
     occurred_at: datetime = Field(index=True)  # 发生时间
     title: str                            # 简短描述
     content: str | None = None            # 详细内容/上下文
-    
+
     # 扩展字段
     metadata: dict = Field(default_factory=dict, sa_column=Column(JSONB))
-    
+
     # 去重字段
     fingerprint: str = Field(unique=True, index=True)  # 哈希指纹
-    
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -169,18 +169,18 @@ class Activity(SQLModel, table=True):
 ```python
 class SourceConfig(SQLModel, table=True):
     """数据源配置 - 存储用户的连接配置"""
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
-    
+
     # 配置信息
     type: str = Field(index=True)  # "git", "dayflow", "siyuan"
     name: str                      # 用户自定义名称
     config_payload: dict = Field(default_factory=dict, sa_column=Column(JSONB))
-    
+
     # 状态
     is_active: bool = Field(default=True)
-    
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -219,23 +219,23 @@ SiYuan 配置:
 ```python
 class Report(SQLModel, table=True):
     """生成的报告"""
-    
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
-    
+
     # 报告信息
     report_type: str = Field(index=True)  # "daily", "weekly"
     date: date = Field(index=True)         # 报告日期
     start_date: date | None = None         # 周报开始日期
     end_date: date | None = None           # 周报结束日期
-    
+
     # 内容
     content: str                           # Markdown 格式的报告内容
     content_edited: str | None = None      # 用户编辑后的内容
-    
+
     # 关联的活动
     activity_ids: list[uuid.UUID] = Field(default_factory=list, sa_column=Column(ARRAY(UUID)))
-    
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -334,12 +334,12 @@ class ActivityService:
     def __init__(self, db: Session):
         self.db = db
         self.connector_registry = ConnectorRegistry()
-    
+
     async def sync_all_sources(self, user_id: UUID) -> dict:
         """同步用户所有配置的数据源"""
         configs = self.get_active_configs(user_id)
         results = []
-        
+
         for config in configs:
             connector = self.connector_registry.get(config.type)
             activities = await connector.fetch_activities(
@@ -350,7 +350,7 @@ class ActivityService:
             # 去重和存储
             saved = self.upsert_activities(user_id, config.id, activities)
             results.append(saved)
-        
+
         return {"total": sum(results)}
 ```
 
@@ -376,30 +376,30 @@ from app.schemas.activity import ActivityCreate
 
 class BaseConnector(ABC):
     """所有数据源必须实现的接口"""
-    
+
     @property
     @abstractmethod
     def source_type(self) -> str:
         """返回数据源类型标识"""
         pass
-    
+
     @abstractmethod
     async def validate_config(self, config: dict) -> bool:
         """
         验证配置是否有效
-        
+
         Args:
             config: 数据源配置字典
-            
+
         Returns:
             bool: 配置是否有效
-            
+
         Raises:
             ValueError: 配置格式错误
             ConnectionError: 无法连接到数据源
         """
         pass
-    
+
     @abstractmethod
     async def fetch_activities(
         self,
@@ -409,21 +409,21 @@ class BaseConnector(ABC):
     ) -> List[ActivityCreate]:
         """
         抓取指定时间范围内的活动数据
-        
+
         Args:
             config: 数据源配置字典
             start_time: 开始时间
             end_time: 结束时间
-            
+
         Returns:
             List[ActivityCreate]: 活动对象列表
-            
+
         Raises:
             ValueError: 配置错误
             ConnectionError: 连接失败
         """
         pass
-    
+
     def generate_fingerprint(
         self,
         source_type: str,
@@ -432,12 +432,12 @@ class BaseConnector(ABC):
     ) -> str:
         """
         生成活动指纹，用于去重
-        
+
         Args:
             source_type: 数据源类型
             source_id: 来源ID
             occurred_at: 发生时间
-            
+
         Returns:
             str: SHA256 哈希值
         """
@@ -455,23 +455,23 @@ from app.schemas.activity import ActivityCreate
 
 class GitConnector(BaseConnector):
     """Git 数据源连接器"""
-    
+
     @property
     def source_type(self) -> str:
         return "git"
-    
+
     async def validate_config(self, config: dict) -> bool:
         """验证 Git 仓库路径是否存在"""
         repo_path = config.get("repo_path")
         if not repo_path:
             raise ValueError("repo_path is required")
-        
+
         try:
             Repo(repo_path)
             return True
         except Exception as e:
             raise ConnectionError(f"Invalid git repository: {e}")
-    
+
     async def fetch_activities(
         self,
         config: dict,
@@ -481,10 +481,10 @@ class GitConnector(BaseConnector):
         """从 Git 仓库读取提交记录"""
         repo_path = config["repo_path"]
         branch = config.get("branch", "main")
-        
+
         repo = Repo(repo_path)
         repo.git.checkout(branch)
-        
+
         activities = []
         for commit in repo.iter_commits(
             rev=branch,
@@ -514,7 +514,7 @@ class GitConnector(BaseConnector):
                 ),
             )
             activities.append(activity)
-        
+
         return activities
 ```
 
@@ -525,20 +525,20 @@ class GitConnector(BaseConnector):
 ```python
 class ConnectorRegistry:
     """连接器注册表 - 工厂模式"""
-    
+
     def __init__(self):
         self._connectors: dict[str, type[BaseConnector]] = {}
-    
+
     def register(self, source_type: str, connector_class: type[BaseConnector]):
         """注册连接器"""
         self._connectors[source_type] = connector_class
-    
+
     def get(self, source_type: str) -> BaseConnector:
         """获取连接器实例"""
         if source_type not in self._connectors:
             raise ValueError(f"Unknown connector type: {source_type}")
         return self._connectors[source_type]()
-    
+
     def list_types(self) -> List[str]:
         """列出所有已注册的连接器类型"""
         return list(self._connectors.keys())
@@ -565,7 +565,7 @@ erDiagram
     User ||--o{ Report : "generates"
     SourceConfig ||--o{ Activity : "produces"
     Activity ||--o{ Report : "included_in"
-    
+
     User {
         uuid id PK
         string email UK
@@ -573,7 +573,7 @@ erDiagram
         bool is_active
         bool is_superuser
     }
-    
+
     SourceConfig {
         uuid id PK
         uuid user_id FK
@@ -582,7 +582,7 @@ erDiagram
         jsonb config_payload
         bool is_active
     }
-    
+
     Activity {
         uuid id PK
         uuid user_id FK
@@ -595,7 +595,7 @@ erDiagram
         jsonb metadata
         string fingerprint UK
     }
-    
+
     Report {
         uuid id PK
         uuid user_id FK
@@ -634,7 +634,7 @@ sequenceDiagram
     API->>Service: sync_all_sources(user_id)
     Service->>DB: 查询用户的活跃配置
     DB-->>Service: [SourceConfig, ...]
-    
+
     loop 每个配置
         Service->>Registry: get(config.type)
         Registry-->>Service: Connector实例
@@ -648,7 +648,7 @@ sequenceDiagram
         Service->>DB: UPSERT activities
         DB-->>Service: 保存结果
     end
-    
+
     Service-->>API: SyncResult
     API-->>User: 同步完成
 ```
@@ -670,12 +670,12 @@ sequenceDiagram
     ActivityService->>DB: 查询activities
     DB-->>ActivityService: [Activity, ...]
     ActivityService-->>ReportService: 活动数据
-    
+
     ReportService->>ReportService: 构建Prompt
     ReportService->>LLMService: summarize(activities, prompt)
     LLMService->>LLMService: 调用LLM API
     LLMService-->>ReportService: Markdown报告
-    
+
     ReportService->>DB: 保存Report
     DB-->>ReportService: Report对象
     ReportService-->>API: ReportResponse
@@ -766,56 +766,56 @@ graph TB
         SiYuan["思源笔记"]
         Dayflow["时间记录"]
     end
-    
+
     subgraph Processing["处理层"]
         Connector["数据连接器"]
         Activity["Activity 模型"]
         Chunker["文本分块"]
     end
-    
+
     subgraph EmbeddingLayer["Embedding 层 (Agno)"]
         EmbedderFactory["Embedder Factory"]
         OpenAI["OpenAI Embedder"]
         Ollama["Ollama Embedder"]
         HF["HuggingFace Embedder"]
     end
-    
+
     subgraph Storage["存储层"]
         PG[("PostgreSQL")]
         ActivityTable["activity 表"]
         EmbeddingTable["activity_embedding 表"]
         VectorIndex["pgvector 索引"]
     end
-    
+
     subgraph Retrieval["检索层"]
         Search["相似性搜索"]
         Rerank["重排序（可选）"]
     end
-    
+
     subgraph LLMLayer["LLM 层"]
         PromptBuilder["Prompt 构建"]
         LLM["LLM API"]
         Response["生成响应"]
     end
-    
+
     DataSources --> Connector
     Connector --> Activity
     Activity --> Chunker
     Chunker --> EmbedderFactory
-    
+
     EmbedderFactory --> OpenAI
     EmbedderFactory --> Ollama
     EmbedderFactory --> HF
-    
+
     OpenAI --> EmbeddingTable
     Ollama --> EmbeddingTable
     HF --> EmbeddingTable
-    
+
     Activity --> ActivityTable
     EmbeddingTable --> VectorIndex
     ActivityTable --> PG
     EmbeddingTable --> PG
-    
+
     VectorIndex --> Search
     Search --> Rerank
     Rerank --> PromptBuilder
@@ -835,30 +835,30 @@ from pgvector.sqlalchemy import Vector
 
 class ActivityEmbedding(SQLModel, table=True):
     """活动向量表 - 存储文本分块的向量表示"""
-    
+
     __tablename__ = "activity_embedding"
-    
+
     # 主键
     id: Optional[int] = Field(default=None, primary_key=True)
-    
+
     # 虚拟外键（无数据库约束）
     activity_id: int = Field(index=True)
     user_id: str = Field(index=True)  # 用于数据隔离
-    
+
     # 向量字段
     embedding: List[float] = Field(sa_column=Column(Vector(1536)))
-    
+
     # 文本分块
     chunk_text: str  # 原始文本片段
     chunk_index: int  # 片段在完整文本中的索引
-    
+
     # 元数据
     embedder_model: str  # 使用的模型名称（用于重新向量化）
     embedder_provider: str  # 提供商（openai/ollama/huggingface）
-    
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.now)
-    
+
     __table_args__ = (
         # 向量相似性搜索索引（使用 HNSW 算法）
         Index(
@@ -881,18 +881,18 @@ from typing import Literal, Optional
 
 class EmbedderConfig(BaseModel):
     """Embedder 配置 - 存储在系统配置或用户设置中"""
-    
+
     provider: Literal["openai", "ollama", "huggingface", "gemini", "cohere"]
     model_name: str  # 例如: "text-embedding-3-small", "nomic-embed-text"
     dimensions: int = 1536  # 向量维度
-    
+
     # API 配置（云端模型）
     api_key: Optional[str] = None
     api_base: Optional[str] = None
-    
+
     # 本地模型配置（Ollama）
     base_url: Optional[str] = "http://localhost:11434"  # Ollama 默认地址
-    
+
     # 性能配置
     batch_size: int = 100  # 批量处理大小
     enable_batch: bool = True  # 是否启用批量处理
@@ -910,13 +910,13 @@ sequenceDiagram
     participant ActivityService
     participant EmbeddingService
     participant DB
-    
+
     User->>API: 同步数据源
     API->>Connector: 获取活动数据
     Connector-->>API: Activities
     API->>ActivityService: 保存活动
     ActivityService->>DB: INSERT activities
-    
+
     ActivityService->>EmbeddingService: 请求向量化
     EmbeddingService->>EmbeddingService: 文本分块
     EmbeddingService->>EmbeddingService: 调用 Agno Embedder
@@ -934,13 +934,13 @@ sequenceDiagram
     participant VectorDB
     participant LLMService
     participant LLM
-    
+
     User->>API: 提问或生成报告
     API->>RetrievalService: 检索相关上下文
     RetrievalService->>RetrievalService: 查询向量化
     RetrievalService->>VectorDB: 相似性搜索
     VectorDB-->>RetrievalService: Top-K 相关片段
-    
+
     RetrievalService->>LLMService: 构建 Prompt
     LLMService->>LLMService: 注入上下文
     LLMService->>LLM: 调用 LLM API
@@ -959,14 +959,14 @@ from agno.knowledge.embedder.huggingface import HuggingFaceEmbedder
 
 class EmbedderFactory:
     """Embedder 工厂 - 根据配置创建 Embedder 实例"""
-    
+
     @staticmethod
     def create(config: EmbedderConfig):
         """根据配置创建 Embedder
-        
+
         Args:
             config: Embedder 配置
-            
+
         Returns:
             Agno Embedder 实例
         """
@@ -1001,25 +1001,25 @@ from loguru import logger
 
 class EmbeddingService:
     """Embedding 服务 - 处理文本向量化"""
-    
+
     def __init__(self, embedder_config: EmbedderConfig):
         self.embedder = EmbedderFactory.create(embedder_config)
         self.config = embedder_config
-    
+
     def chunk_text(self, text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
         """将长文本分块
-        
+
         Args:
             text: 原始文本
             chunk_size: 块大小（字符数）
             overlap: 重叠大小
-            
+
         Returns:
             文本块列表
         """
         if len(text) <= chunk_size:
             return [text]
-        
+
         chunks = []
         start = 0
         while start < len(text):
@@ -1027,29 +1027,29 @@ class EmbeddingService:
             chunk = text[start:end]
             chunks.append(chunk)
             start += chunk_size - overlap
-        
+
         return chunks
-    
+
     def embed_activity(self, activity: Activity, db: Session) -> List[ActivityEmbedding]:
         """为活动生成向量
-        
+
         Args:
             activity: 活动对象
             db: 数据库 Session
-            
+
         Returns:
             生成的向量记录列表
         """
         # 构建待向量化的文本
         text = f"{activity.title}\n\n{activity.content or ''}"
-        
+
         # 文本分块
         chunks = self.chunk_text(text)
         logger.info(f"Activity {activity.id} split into {len(chunks)} chunks")
-        
+
         # 批量向量化
         embeddings_list = self.embedder.get_embeddings(chunks)
-        
+
         # 创建向量记录
         embedding_records = []
         for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings_list)):
@@ -1064,7 +1064,7 @@ class EmbeddingService:
             )
             embedding_records.append(record)
             db.add(record)
-        
+
         db.commit()
         logger.info(f"Created {len(embedding_records)} embeddings for activity {activity.id}")
         return embedding_records
@@ -1077,10 +1077,10 @@ from sqlalchemy import text, select
 
 class RetrievalService:
     """检索服务 - 执行向量相似性搜索"""
-    
+
     def __init__(self, embedder_config: EmbedderConfig):
         self.embedder = EmbedderFactory.create(embedder_config)
-    
+
     def search(
         self,
         query: str,
@@ -1090,23 +1090,23 @@ class RetrievalService:
         min_similarity: float = 0.7,
     ) -> List[tuple[ActivityEmbedding, float]]:
         """语义搜索
-        
+
         Args:
             query: 查询文本
             user_id: 用户 ID（数据隔离）
             db: 数据库 Session
             top_k: 返回结果数量
             min_similarity: 最小相似度阈值
-            
+
         Returns:
             (向量记录, 相似度分数) 元组列表
         """
         # 查询向量化
         query_embedding = self.embedder.get_embedding(query)
-        
+
         # 向量相似性搜索（使用余弦相似度）
         sql = text("""
-            SELECT 
+            SELECT
                 id,
                 activity_id,
                 chunk_text,
@@ -1117,7 +1117,7 @@ class RetrievalService:
             ORDER BY embedding <=> :query_embedding
             LIMIT :top_k
         """)
-        
+
         results = db.execute(
             sql,
             {
@@ -1127,7 +1127,7 @@ class RetrievalService:
                 "top_k": top_k,
             }
         ).fetchall()
-        
+
         return results
 ```
 
@@ -1158,23 +1158,23 @@ SourceConfig(
 ```python
 class GitScanConfig(SQLModel, table=True):
     """Git 批量扫描配置"""
-    
+
     __tablename__ = "git_scan_config"
-    
+
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(index=True)
-    
+
     # 扫描配置
     scan_root_path: str  # 扫描根目录，如 "/Users/leo/work"
     include_patterns: List[str] = Field(default_factory=lambda: ["*"])  # 包含模式
     exclude_patterns: List[str] = Field(
         default_factory=lambda: ["node_modules", ".git", "venv", "__pycache__"]
     )
-    
+
     # 状态
     is_active: bool = Field(default=True)
     last_scan_at: Optional[datetime] = None
-    
+
     # 时间戳
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -1189,24 +1189,24 @@ from git import Repo, InvalidGitRepositoryError
 
 class GitScanService:
     """Git 仓库扫描服务"""
-    
+
     def scan_directory(self, scan_config: GitScanConfig) -> List[dict]:
         """扫描目录下的所有 Git 仓库
-        
+
         Args:
             scan_config: 扫描配置
-            
+
         Returns:
             发现的仓库信息列表
         """
         root_path = Path(scan_config.scan_root_path).expanduser()
         discovered_repos = []
-        
+
         for item in root_path.rglob("*"):
             # 跳过排除的目录
             if any(pattern in str(item) for pattern in scan_config.exclude_patterns):
                 continue
-            
+
             # 检查是否是 Git 仓库
             if item.is_dir() and (item / ".git").exists():
                 try:
@@ -1219,26 +1219,26 @@ class GitScanService:
                     })
                 except InvalidGitRepositoryError:
                     continue
-        
+
         return discovered_repos
-    
+
     def auto_create_configs(
         self,
         scan_config: GitScanConfig,
         db: Session,
     ) -> List[SourceConfig]:
         """自动为发现的仓库创建配置
-        
+
         Args:
             scan_config: 扫描配置
             db: 数据库 Session
-            
+
         Returns:
             创建的配置列表
         """
         repos = self.scan_directory(scan_config)
         created_configs = []
-        
+
         for repo_info in repos:
             # 检查是否已存在配置
             existing = db.exec(
@@ -1248,7 +1248,7 @@ class GitScanService:
                     SourceConfig.config_payload["repo_path"].as_string() == repo_info["path"]
                 )
             ).first()
-            
+
             if not existing:
                 config = SourceConfig(
                     user_id=scan_config.user_id,
@@ -1262,14 +1262,14 @@ class GitScanService:
                 )
                 db.add(config)
                 created_configs.append(config)
-        
+
         db.commit()
-        
+
         # 更新扫描时间
         scan_config.last_scan_at = datetime.now()
         db.add(scan_config)
         db.commit()
-        
+
         logger.info(f"Created {len(created_configs)} new Git configs from scan")
         return created_configs
 ```
@@ -1301,7 +1301,7 @@ class GitScanService:
 ```python
 class EmbeddingMigrationService:
     """Embedder 迁移服务"""
-    
+
     def migrate_embeddings(
         self,
         old_model: str,
@@ -1309,7 +1309,7 @@ class EmbeddingMigrationService:
         db: Session,
     ):
         """迁移到新的 Embedder
-        
+
         Args:
             old_model: 旧模型名称
             new_config: 新模型配置
@@ -1322,10 +1322,10 @@ class EmbeddingMigrationService:
             )
         )
         db.commit()
-        
+
         # 2. 获取所有活动
         activities = db.exec(select(Activity)).all()
-        
+
         # 3. 使用新模型重新向量化
         embedding_service = EmbeddingService(new_config)
         for activity in activities:
@@ -1352,14 +1352,14 @@ class JiraConnector(BaseConnector):
     @property
     def source_type(self) -> str:
         return "jira"
-    
+
     async def validate_config(self, config: dict) -> bool:
         # 验证 Jira API Token 和 URL
         api_url = config.get("api_url")
         api_token = config.get("api_token")
         # ... 验证逻辑
         return True
-    
+
     async def fetch_activities(
         self,
         config: dict,
@@ -1486,4 +1486,3 @@ TraceWeaver 的架构设计遵循"高内聚、低耦合"的原则，通过适配
 4. **易于理解**：统一的抽象模型，降低认知负担
 
 通过这种架构，TraceWeaver 可以轻松接入 Jira、Google Calendar、飞书等新的数据源，而无需重写核心业务逻辑。
-

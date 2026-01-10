@@ -1,7 +1,9 @@
 """Source configuration CRUD operations."""
 
 from typing import Any
+
 from sqlmodel import Session, func, select
+
 from app.crud.base import CRUDBase
 from app.models.source_config import SourceConfig
 from app.schemas.source_config import SourceConfigCreate, SourceConfigUpdate

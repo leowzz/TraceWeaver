@@ -1,16 +1,17 @@
 import uuid
-from contextvars import ContextVar
 from contextlib import contextmanager
-from typing import Optional, Any
+from contextvars import ContextVar
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class CtxInfo(BaseModel):
-    user_id: Optional[uuid.UUID] = None
-    trace_id: Optional[str] = None
+    user_id: uuid.UUID | None = None
+    trace_id: str | None = None
 
 
-_ctx_var: ContextVar[Optional[CtxInfo]] = ContextVar("ctx", default=None)
+_ctx_var: ContextVar[CtxInfo | None] = ContextVar("ctx", default=None)
 
 
 class CtxProxy:
@@ -31,7 +32,7 @@ ctx: CtxInfo = CtxProxy()  # type: ignore
 
 
 @contextmanager
-def mock_ctx(user_id: Optional[str] = "mock_user"):
+def mock_ctx(user_id: str | None = "mock_user"):
     token = _ctx_var.set(CtxInfo(user_id=user_id, trace_id=uuid.uuid4().hex[-8:]))
     try:
         yield

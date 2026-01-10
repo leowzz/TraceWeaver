@@ -4,9 +4,9 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.crud.user import user_crud
 from app.core.config import settings
 from app.core.security import verify_password
+from app.crud.user import user_crud
 from app.models import User, UserCreate
 from tests.utils.utils import random_email, random_lower_string
 
@@ -14,7 +14,9 @@ from tests.utils.utils import random_email, random_lower_string
 def test_get_users_superuser_me(
     client: TestClient, superuser_token_headers: dict[str, str]
 ) -> None:
-    r = client.get(f"{settings.app.api_v1_str}/users/me", headers=superuser_token_headers)
+    r = client.get(
+        f"{settings.app.api_v1_str}/users/me", headers=superuser_token_headers
+    )
     current_user = r.json()
     assert current_user
     assert current_user["is_active"] is True
@@ -25,7 +27,9 @@ def test_get_users_superuser_me(
 def test_get_users_normal_user_me(
     client: TestClient, normal_user_token_headers: dict[str, str]
 ) -> None:
-    r = client.get(f"{settings.app.api_v1_str}/users/me", headers=normal_user_token_headers)
+    r = client.get(
+        f"{settings.app.api_v1_str}/users/me", headers=normal_user_token_headers
+    )
     current_user = r.json()
     assert current_user
     assert current_user["is_active"] is True
@@ -229,7 +233,9 @@ def test_update_password_me(
     db.refresh(user_db)
 
     assert r.status_code == 200
-    assert verify_password(settings.auth.first_superuser_password, user_db.hashed_password)
+    assert verify_password(
+        settings.auth.first_superuser_password, user_db.hashed_password
+    )
 
 
 def test_update_password_me_incorrect_password(

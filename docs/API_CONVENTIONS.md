@@ -332,13 +332,13 @@ def delete_activity(
     activity = db.get(Activity, id)
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    
+
     if activity.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to delete this activity"
         )
-    
+
     db.delete(activity)
     db.commit()
 ```
@@ -384,7 +384,7 @@ def list_activities(
     total = db.exec(
         select(func.count(Activity.id)).where(Activity.user_id == current_user.id)
     ).one()
-    
+
     # 分页查询
     statement = (
         select(Activity)
@@ -394,7 +394,7 @@ def list_activities(
         .order_by(Activity.occurred_at.desc())
     )
     activities = db.exec(statement).all()
-    
+
     return ActivitiesPublic(
         data=activities,
         count=len(activities),
@@ -448,22 +448,22 @@ def list_activities(
 ):
     # 构建查询
     statement = select(Activity).where(Activity.user_id == current_user.id)
-    
+
     # 应用过滤
     if filter.source_type:
         statement = statement.where(Activity.source_type == filter.source_type)
-    
+
     if filter.start_date:
         statement = statement.where(Activity.occurred_at >= filter.start_date)
-    
+
     if filter.end_date:
         statement = statement.where(Activity.occurred_at <= filter.end_date)
-    
+
     if filter.search:
         statement = statement.where(
             Activity.title.ilike(f"%{filter.search}%")
         )
-    
+
     # 应用排序
     sort_fields = []
     for field in sort.split(","):
@@ -471,14 +471,14 @@ def list_activities(
             sort_fields.append(getattr(Activity, field[1:]).desc())
         else:
             sort_fields.append(getattr(Activity, field).asc())
-    
+
     statement = statement.order_by(*sort_fields)
-    
+
     # 分页
     statement = statement.offset(skip).limit(limit)
-    
+
     activities = db.exec(statement).all()
-    
+
     return ActivitiesPublic(data=activities, count=len(activities))
 ```
 
@@ -626,12 +626,12 @@ def list_activities(
     db: Session = Depends(get_db),
 ) -> ActivitiesPublic:
     """获取活动列表
-    
+
     支持过滤、排序和分页
     """
     # 构建基础查询
     statement = select(Activity).where(Activity.user_id == current_user.id)
-    
+
     # 应用过滤
     if filter.source_type:
         statement = statement.where(Activity.source_type == filter.source_type)
@@ -641,23 +641,23 @@ def list_activities(
         statement = statement.where(Activity.occurred_at <= filter.end_date)
     if filter.search:
         statement = statement.where(Activity.title.ilike(f"%{filter.search}%"))
-    
+
     # 统计总数
     count_statement = select(func.count()).select_from(statement.subquery())
     total = db.exec(count_statement).one()
-    
+
     # 应用排序
     for field in sort.split(","):
         desc = field.startswith("-")
         field_name = field[1:] if desc else field
         order = getattr(Activity, field_name).desc() if desc else getattr(Activity, field_name).asc()
         statement = statement.order_by(order)
-    
+
     # 应用分页
     statement = statement.offset(skip).limit(limit)
-    
+
     activities = db.exec(statement).all()
-    
+
     return ActivitiesPublic(
         data=activities,
         count=len(activities),
@@ -674,19 +674,19 @@ def get_activity(
 ) -> ActivityPublic:
     """获取单个活动"""
     activity = db.get(Activity, id)
-    
+
     if not activity:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Activity {id} not found"
         )
-    
+
     if activity.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to access this activity"
         )
-    
+
     return activity
 
 @router.post("", response_model=ActivityPublic, status_code=status.HTTP_201_CREATED)
@@ -711,17 +711,17 @@ def update_activity(
 ) -> ActivityPublic:
     """更新活动"""
     activity = db.get(Activity, id)
-    
+
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    
+
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Permission denied")
-    
+
     # 更新非空字段
     for key, value in data.dict(exclude_unset=True).items():
         setattr(activity, key, value)
-    
+
     db.add(activity)
     db.commit()
     db.refresh(activity)
@@ -735,13 +735,13 @@ def delete_activity(
 ):
     """删除活动"""
     activity = db.get(Activity, id)
-    
+
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    
+
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Permission denied")
-    
+
     db.delete(activity)
     db.commit()
 ```

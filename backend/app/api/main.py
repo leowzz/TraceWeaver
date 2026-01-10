@@ -1,6 +1,17 @@
 from fastapi import APIRouter
 
-from app.api.routes import items, login, private, users, utils, source_configs, llm_model_configs, llm_prompts, image_analyses, debug
+from app.api.routes import (
+    debug,
+    image_analyses,
+    items,
+    llm_model_configs,
+    llm_prompts,
+    login,
+    private,
+    source_configs,
+    users,
+    utils,
+)
 from app.core.config import settings
 
 api_router = APIRouter()

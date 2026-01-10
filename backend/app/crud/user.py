@@ -1,10 +1,11 @@
 """User CRUD operations."""
 
 from typing import Any
-from sqlmodel import Session, select
 
-from app.crud.base import CRUDBase
+from sqlmodel import Session
+
 from app.core.security import get_password_hash, verify_password
+from app.crud.base import CRUDBase
 from app.models import User, UserCreate, UserUpdate
 
 
@@ -17,9 +18,10 @@ class UserCRUD(CRUDBase[User, UserCreate, UserUpdate]):
             user_create = UserCreate.model_validate(obj_in)
         else:
             user_create = obj_in
-        
+
         db_obj = User.model_validate(
-            user_create, update={"hashed_password": get_password_hash(user_create.password)}
+            user_create,
+            update={"hashed_password": get_password_hash(user_create.password)},
         )
         session.add(db_obj)
         session.commit()
@@ -41,22 +43,20 @@ class UserCRUD(CRUDBase[User, UserCreate, UserUpdate]):
             user_data = obj_in
         else:
             user_data = obj_in.model_dump(exclude_unset=True)
-        
+
         extra_data = {}
         if "password" in user_data:
             password = user_data.pop("password")
             hashed_password = get_password_hash(password)
             extra_data["hashed_password"] = hashed_password
-        
+
         db_user.sqlmodel_update(user_data, update=extra_data)
         session.add(db_user)
         session.commit()
         session.refresh(db_user)
         return db_user
 
-    def update_obj(
-        self, session: Session, db_user: User, user_in: UserUpdate
-    ) -> User:
+    def update_obj(self, session: Session, db_user: User, user_in: UserUpdate) -> User:
         """Update user object directly (for backward compatibility)."""
         user_data = user_in.model_dump(exclude_unset=True)
         extra_data = {}
@@ -86,4 +86,3 @@ class UserCRUD(CRUDBase[User, UserCreate, UserUpdate]):
 
 # Global instance
 user_crud = UserCRUD(User)
-

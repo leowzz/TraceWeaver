@@ -187,7 +187,9 @@ class SiYuanClient:
         Returns:
             Notebook configuration dictionary
         """
-        return await self._request("/api/notebook/getNotebookConf", {"notebook": notebook_id})
+        return await self._request(
+            "/api/notebook/getNotebookConf", {"notebook": notebook_id}
+        )
 
     async def set_notebook_conf(self, notebook_id: str, conf: dict) -> None:
         """Set notebook configuration.
@@ -709,4 +711,3 @@ class SiYuanClient:
             },
         )
         return MessageResult.model_validate(data)
-

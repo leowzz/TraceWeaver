@@ -3,12 +3,10 @@
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.crud.llm_model_config import llm_model_config_crud
 from app.models import Message
-from app.models.llm_model_config import LLMModelConfig
 from app.schemas.llm_model_config import (
     LLMModelConfigCreate,
     LLMModelConfigPublic,
@@ -26,7 +24,13 @@ def read_llm_model_configs(
     """Retrieve LLM Model configurations."""
     configs = llm_model_config_crud.get_multi(session=session, skip=skip, limit=limit)
     count = llm_model_config_crud.count(session=session)
-    return LLMModelConfigsPublic(data=[LLMModelConfigPublic.model_validate(c, from_attributes=True) for c in configs], count=count)
+    return LLMModelConfigsPublic(
+        data=[
+            LLMModelConfigPublic.model_validate(c, from_attributes=True)
+            for c in configs
+        ],
+        count=count,
+    )
 
 
 @router.get("/{id}", response_model=LLMModelConfigPublic)

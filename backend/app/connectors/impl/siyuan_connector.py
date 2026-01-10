@@ -4,7 +4,8 @@ from datetime import datetime
 
 from fastapi import HTTPException
 from loguru import logger
-from app.clients.siyuan import SiYuanClient, SiYuanAPIError
+
+from app.clients.siyuan import SiYuanAPIError, SiYuanClient
 from app.connectors.base import BaseConnector
 from app.core.context import ctx
 from app.models.enums import SourceType
@@ -76,14 +77,14 @@ class SiYuanConnector(BaseConnector):
         # Note: We still need SQL here as there's no time-range query API
         start_str = start_time.strftime("%Y%m%d%H%M%S")
         end_str = end_time.strftime("%Y%m%d%H%M%S")
-        
+
         doc_rows = await client.query_sql(f"""
             SELECT id, created, updated, content, box, hpath, tag, memo, alias
-            FROM blocks 
-            WHERE type='d' 
+            FROM blocks
+            WHERE type='d'
             AND (
                 (created >= '{start_str}' AND created <= '{end_str}')
-                OR 
+                OR
                 (updated >= '{start_str}' AND updated <= '{end_str}')
             )
             ORDER BY updated DESC
@@ -95,17 +96,21 @@ class SiYuanConnector(BaseConnector):
         activities = []
         for doc_row in doc_rows:
             doc_id = doc_row["id"]
-            
+
             try:
                 # Step 2: Export document as Markdown using the client API
                 export_result = await client.export_md_content(doc_id)
                 full_content = export_result.content
                 hpath = export_result.hPath
-                
+
                 # Step 3: Extract metadata from the document row
-                title = doc_row.get("content", "")[:100] or hpath.split("/")[-1] or "Untitled"
+                title = (
+                    doc_row.get("content", "")[:100]
+                    or hpath.split("/")[-1]
+                    or "Untitled"
+                )
                 created_str = doc_row.get("created", "")
-                
+
                 try:
                     occurred_at = datetime.strptime(created_str, "%Y%m%d%H%M%S")
                 except (ValueError, TypeError):

@@ -21,7 +21,7 @@ TraceWeaver 是一个**个人数据管理和知识库构建平台**，旨在：
 
 ```
 Git 提交 → Activity
-思源笔记 → Activity  
+思源笔记 → Activity
 时间记录 → Activity
 ```
 
@@ -52,23 +52,23 @@ graph LR
         SiYuan["思源笔记"]
         Dayflow["时间记录"]
     end
-    
+
     subgraph Core["核心处理"]
         Adapter["适配器层"]
         Activity["Activity 统一模型"]
         Vector["向量化 (Agno)"]
     end
-    
+
     subgraph Storage["存储层"]
         PG["PostgreSQL + pgvector"]
     end
-    
+
     subgraph Output["输出层"]
         Search["语义搜索"]
         RAG["RAG 检索"]
         Report["智能报告"]
     end
-    
+
     Input --> Adapter
     Adapter --> Activity
     Activity --> Vector
@@ -230,11 +230,11 @@ Top-K 相关片段
 1. **Git 仓库**
    - 手动配置：用户逐个添加仓库路径
    - 批量扫描：自动发现指定目录下的所有 Git 仓库
-   
+
 2. **思源笔记（SiYuan）**
    - 通过 API 同步文档和块
    - 支持导出完整 Markdown 内容
-   
+
 3. **Dayflow 时间记录**
    - 同步时间追踪数据
    - 记录工作时长和项目标签

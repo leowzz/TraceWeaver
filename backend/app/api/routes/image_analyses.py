@@ -23,7 +23,9 @@ def read_image_analyses(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
-    status: AnalysisStatus | None = Query(None, description="Filter by analysis status"),
+    status: AnalysisStatus | None = Query(
+        None, description="Filter by analysis status"
+    ),
 ) -> Any:
     """Retrieve Image Analyses."""
     analyses = image_analysis_crud.get_multi(
@@ -37,9 +39,7 @@ def read_image_analyses(
 
 
 @router.get("/{id}", response_model=ImageAnalysisPublic)
-def read_image_analysis(
-    session: SessionDep, current_user: CurrentUser, id: int
-) -> Any:
+def read_image_analysis(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     """Get Image Analysis by ID."""
     analysis = image_analysis_crud.get(session=session, id=id)
     if not analysis:
@@ -52,7 +52,7 @@ async def get_image_analysis_image(
     session: SessionDep, current_user: CurrentUser, id: int
 ) -> Response:
     """Get the image for an Image Analysis record.
-    
+
     Streams the image bytes from the source system.
     """
     analysis = image_analysis_crud.get(session=session, id=id)
@@ -63,7 +63,7 @@ async def get_image_analysis_image(
         image_bytes = await _fetch_image_from_source(
             session, analysis.source_type, analysis.img_path
         )
-        
+
         # Determine content type from path
         img_path = analysis.img_path.lower()
         if img_path.endswith(".png"):
@@ -105,6 +105,6 @@ async def _fetch_image_from_source(
 
     if not isinstance(connector, SiYuanConnector):
         raise ValueError("Invalid connector type for SiYuan")
-    
+
     client = connector._get_client()
     return await client.get_file(f"/data/{img_path}")

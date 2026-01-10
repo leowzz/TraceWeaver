@@ -3,7 +3,6 @@
 from agno.agent import Agent
 from agno.media import Image
 from agno.models.ollama import Ollama
-from agno.models.openai import OpenAIChat
 from agno.models.openai.like import OpenAILike
 from loguru import logger
 
@@ -22,7 +21,7 @@ class LLMClientError(Exception):
 
 class LLMClient:
     """Unified LLM client using agno framework.
-    
+
     Supports text and multimodal (text + images) interactions.
     """
 
@@ -88,15 +87,15 @@ class LLMClient:
         """
         try:
             response = self.agent.run(message)
-            content = response.content if hasattr(response, "content") else str(response)
+            content = (
+                response.content if hasattr(response, "content") else str(response)
+            )
             return LLMChatResponse(content=content)
         except Exception as e:
             logger.error(f"Chat failed ({self.provider.value}): {e}")
             raise LLMClientError(str(e), provider=self.provider.value)
 
-    async def analyze_image(
-        self, image_bytes: bytes, prompt: str
-    ) -> LLMChatResponse:
+    async def analyze_image(self, image_bytes: bytes, prompt: str) -> LLMChatResponse:
         """Analyze an image with a prompt.
 
         Args:
@@ -109,7 +108,9 @@ class LLMClient:
         try:
             image = Image(content=image_bytes)
             response = self.agent.run(prompt, images=[image])
-            content = response.content if hasattr(response, "content") else str(response)
+            content = (
+                response.content if hasattr(response, "content") else str(response)
+            )
             return LLMChatResponse(content=content)
         except Exception as e:
             logger.error(f"Image analysis failed ({self.provider.value}): {e}")

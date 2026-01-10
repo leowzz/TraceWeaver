@@ -1,7 +1,6 @@
 import uuid
 
 import jwt
-from typing import Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
@@ -18,7 +17,7 @@ class ContextMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         user_id = self._extract_user_id(request)
         trace_id = uuid.uuid4().hex[-8:]
-        
+
         # Initialize context for the request
         token = _ctx_var.set(CtxInfo(user_id=user_id, trace_id=trace_id))
         try:
@@ -27,11 +26,11 @@ class ContextMiddleware(BaseHTTPMiddleware):
         finally:
             _ctx_var.reset(token)
 
-    def _extract_user_id(self, request: Request) -> Optional[str]:
+    def _extract_user_id(self, request: Request) -> str | None:
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             return None
-        
+
         token = auth_header.split(" ")[1]
         try:
             payload = jwt.decode(

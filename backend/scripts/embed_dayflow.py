@@ -68,62 +68,68 @@ def main():
         default="2020-08-12",
         help="Start date for fetching activities (YYYY-MM-DD format, default: 2020-08-12)",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Validate user_id is a valid UUID
     try:
         user_id = UUID(args.user_id)
     except ValueError:
         logger.error(f"Invalid user ID format: {args.user_id}")
         sys.exit(1)
-    
+
     # Parse start date
     try:
         start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
     except ValueError:
-        logger.error(f"Invalid start date format: {args.start_date}. Expected YYYY-MM-DD format")
+        logger.error(
+            f"Invalid start date format: {args.start_date}. Expected YYYY-MM-DD format"
+        )
         sys.exit(1)
-    
+
     # Initialize connector
     logger.info(f"Reading Dayflow database from: {args.db_path}")
     config = DayflowLocalConfig(db_path=args.db_path)
     connector = DayflowLocalConnector(config)
-    
+
     # Validate database access
     try:
         import asyncio
+
         asyncio.run(connector.validate_config())
     except Exception as e:
         logger.error(f"Failed to validate Dayflow database: {e}")
         sys.exit(1)
-    
+
     # Fetch all activities
-    logger.info(f"Fetching activities from Dayflow database (from {start_date.date()})...")
-    activity_creates = connector.fetch_activities(start_time=start_date,
-                                                  end_time=datetime.now())
+    logger.info(
+        f"Fetching activities from Dayflow database (from {start_date.date()})..."
+    )
+    activity_creates = connector.fetch_activities(
+        start_time=start_date, end_time=datetime.now()
+    )
     for ac in activity_creates:
         ac.user_id = user_id
-    
+
     if args.limit:
-        activity_creates = activity_creates[:args.limit]
+        activity_creates = activity_creates[: args.limit]
         logger.info(f"Limited to {args.limit} activities for testing")
-    
+
     logger.info(f"Fetched {len(activity_creates)} activities")
-    
+
     if not activity_creates:
         logger.warning("No activities found in database")
         return
-    
+
     # Initialize force_regenerate_ids outside session scope
     force_regenerate_ids = set()
-    
+
     # Save activities to database with upsert logic
     with Session(engine) as session:
         # Set user_id for all activities
         for activity_create in activity_creates:
             activity_create.user_id = user_id
-        
+
         # Batch query: get all existing fingerprints
         fingerprints = [ac.fingerprint for ac in activity_creates]
         existing_activities_dict = {
@@ -132,16 +138,18 @@ def main():
                 select(Activity).where(Activity.fingerprint.in_(fingerprints))
             ).all()
         }
-        
+
         # Track activities by status
         new_activities = []
         updated_activities = []
         unchanged_activities = []
-        
+
         # Process each activity create
         for activity_create in activity_creates:
-            existing_activity = existing_activities_dict.get(activity_create.fingerprint)
-            
+            existing_activity = existing_activities_dict.get(
+                activity_create.fingerprint
+            )
+
             if existing_activity is None:
                 # New activity: create it
                 activity = Activity.model_validate(activity_create)
@@ -154,7 +162,7 @@ def main():
                     or existing_activity.content != activity_create.content
                     or existing_activity.extra_data != activity_create.extra_data
                 )
-                
+
                 if content_changed:
                     # Update existing activity
                     existing_activity.title = activity_create.title
@@ -171,17 +179,17 @@ def main():
                 else:
                     # No changes: keep existing
                     unchanged_activities.append(existing_activity)
-        
+
         # Commit all changes
         session.commit()
-        
+
         # Refresh to get IDs for new activities
         for activity in new_activities:
             session.refresh(activity)
-        
+
         # Combine all activities
         activities = new_activities + updated_activities + unchanged_activities
-        
+
         logger.info(
             f"Activity upsert completed: "
             f"{len(new_activities)} new, "
@@ -189,16 +197,16 @@ def main():
             f"{len(unchanged_activities)} unchanged "
             f"(total: {len(activities)} activities)"
         )
-        
+
         if force_regenerate_ids:
             logger.info(
                 f"{len(force_regenerate_ids)} activities marked for embedding regeneration"
             )
-    
+
     # Initialize embedding service
     logger.info("Initializing embedding service...")
     embedding_service = EmbeddingService()
-    
+
     # Embed activities
     logger.info(f"Starting embedding process (batch size: {args.batch_size})...")
     with Session(engine) as session:
@@ -208,7 +216,7 @@ def main():
                 Activity.fingerprint.in_([a.fingerprint for a in activity_creates])
             )
         ).all()
-        
+
         # If --force-regenerate-all is set, add all activity IDs to force_regenerate_ids
         if args.force_regenerate_all:
             force_regenerate_ids.clear()
@@ -218,7 +226,7 @@ def main():
             logger.info(
                 f"Force regenerate all: {len(force_regenerate_ids)} activities will be re-embedded"
             )
-        
+
         success_count = embedding_service.embed_activities_batch(
             activities,
             user_id,
@@ -226,8 +234,10 @@ def main():
             batch_size=args.batch_size,
             force_regenerate_ids=force_regenerate_ids,
         )
-    
-    logger.info(f"✅ Embedding completed: {success_count}/{len(activities)} activities embedded")
+
+    logger.info(
+        f"✅ Embedding completed: {success_count}/{len(activities)} activities embedded"
+    )
 
 
 if __name__ == "__main__":

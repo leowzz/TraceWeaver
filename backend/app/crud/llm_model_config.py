@@ -46,4 +46,3 @@ class LLMModelConfigCRUD(CRUDBase[LLMModelConfig, LLMModelConfig, LLMModelConfig
 
 
 llm_model_config_crud = LLMModelConfigCRUD(LLMModelConfig)
-

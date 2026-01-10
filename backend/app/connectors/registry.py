@@ -1,15 +1,14 @@
 """Connector registry - Factory pattern for managing connectors."""
 
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from app.connectors.base import BaseConnector
 from app.models import SourceConfig, SourceType
 from app.schemas.source_config import SiYuanConfig
 
-SourceType2ConfigSchema = {
-    SourceType.SIYUAN: SiYuanConfig
-}
+SourceType2ConfigSchema = {SourceType.SIYUAN: SiYuanConfig}
 ConnectorType = TypeVar("ConnectorType", bound=BaseConnector)
+
 
 class ConnectorRegistry:
     """Factory for creating and managing data source connectors."""

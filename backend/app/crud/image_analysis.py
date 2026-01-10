@@ -9,12 +9,21 @@ from app.models.image_analysis import ImageAnalysis
 
 class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
     def get_multi(
-            self, session: Session, *, skip: int = 0, limit: int = 100, status: AnalysisStatus | None = None
+        self,
+        session: Session,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        status: AnalysisStatus | None = None,
     ) -> list[ImageAnalysis]:
         statement = select(ImageAnalysis)
         if status:
             statement = statement.where(ImageAnalysis.status == status)
-        statement = statement.offset(skip).limit(limit).order_by(ImageAnalysis.created_at.desc())
+        statement = (
+            statement.offset(skip)
+            .limit(limit)
+            .order_by(ImageAnalysis.created_at.desc())
+        )
         return list(session.exec(statement).all())
 
     def count(self, session: Session, status: AnalysisStatus | None = None) -> int:
@@ -24,7 +33,7 @@ class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
         return session.exec(statement).one()
 
     def get_by_img_path_status(
-            self, session: Session, img_path: str, status: AnalysisStatus
+        self, session: Session, img_path: str, status: AnalysisStatus
     ) -> list[ImageAnalysis]:
         """Get all image analyses by image path and status.
 
@@ -42,7 +51,11 @@ class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
         return list(session.exec(statement).all())
 
     def get_by_img_path_status_prompt_id(
-            self, session: Session, img_path: str, status: AnalysisStatus, llm_prompt_id: int
+        self,
+        session: Session,
+        img_path: str,
+        status: AnalysisStatus,
+        llm_prompt_id: int,
     ) -> list[ImageAnalysis]:
         """Get all image analyses by image path and status.
 
@@ -58,7 +71,7 @@ class ImageAnalysisCRUD(CRUDBase[ImageAnalysis, ImageAnalysis, ImageAnalysis]):
         statement = select(ImageAnalysis).where(
             ImageAnalysis.img_path == img_path,
             ImageAnalysis.status == status,
-            ImageAnalysis.llm_prompt_id == llm_prompt_id
+            ImageAnalysis.llm_prompt_id == llm_prompt_id,
         )
         return list(session.exec(statement).all())
 

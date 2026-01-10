@@ -11,9 +11,9 @@ from app.connectors import registry
 from app.connectors.impl.siyuan_connector import SiYuanConnector
 from app.core.context import mock_ctx
 from app.crud.source_config import source_config_crud
-from app.services.image_analysis_service import submit_image_analysis_task
-from app.schemas.llm import ImageAnalysisTaskData
 from app.models.enums import ImageSourceType
+from app.schemas.llm import ImageAnalysisTaskData
+from app.services.image_analysis_service import submit_image_analysis_task
 
 # Regex to match markdown image syntax: ![alt](path)
 IMG_PATH_PATTERN = re.compile(r"!\[.*?\]\((assets/[^)]+)\)")
@@ -38,11 +38,15 @@ async def main():
     activities = await connector.fetch_activities(start_time, end_time)
 
     logger.info(f"Found {len(activities)} activities.")
-    img_paths = ['assets/image-20251219112035-5zqm3ln.png']
+    img_paths = ["assets/image-20251219112035-5zqm3ln.png"]
     for activity in activities:
-        if any(exclude_str in activity.title for exclude_str in ('MacOS', '2025-12-26')):
+        if any(
+            exclude_str in activity.title for exclude_str in ("MacOS", "2025-12-26")
+        ):
             continue
-        logger.info(f"- [{activity.occurred_at}] {activity.title} (ID: {activity.source_id})")
+        logger.info(
+            f"- [{activity.occurred_at}] {activity.title} (ID: {activity.source_id})"
+        )
         # logger.debug(f"Content: {activity.content}...")
 
         # Extract image paths from content
@@ -51,15 +55,18 @@ async def main():
 
     logger.info(f"Found {len(img_paths)} images: {img_paths}")
     for img_path in img_paths:
-        from app.services.image_analysis_service import submit_image_analysis_task
-        from app.schemas.llm import ImageAnalysisTaskData
         from app.models.enums import ImageSourceType
-        submit_image_analysis_task(ImageAnalysisTaskData(
-            img_path=img_path,
-            source_type=ImageSourceType.SIYUAN_LOCAL,
-            llm_prompt_id=1,
-            model_name="qwen3-vl:2b"
-        ))
+        from app.schemas.llm import ImageAnalysisTaskData
+        from app.services.image_analysis_service import submit_image_analysis_task
+
+        submit_image_analysis_task(
+            ImageAnalysisTaskData(
+                img_path=img_path,
+                source_type=ImageSourceType.SIYUAN_LOCAL,
+                llm_prompt_id=1,
+                model_name="qwen3-vl:2b",
+            )
+        )
 
 
 async def process_all_siyuan_img():
@@ -73,8 +80,12 @@ async def process_all_siyuan_img():
     logger.info(f"Using config: {config.name} ({config.type})")
     connector: SiYuanConnector = registry.get(config)
     siyuan_client = connector._get_client()
-    query_result = await siyuan_client.query_sql("SELECT * FROM blocks where markdown like '%![image](assets%' limit 10000")
-    block_datas: list[BlockSchema] = [BlockSchema.model_validate(qr) for qr in query_result]
+    query_result = await siyuan_client.query_sql(
+        "SELECT * FROM blocks where markdown like '%![image](assets%' limit 10000"
+    )
+    block_datas: list[BlockSchema] = [
+        BlockSchema.model_validate(qr) for qr in query_result
+    ]
     logger.info(f"{len(block_datas)=}. {block_datas[0]}")
 
     img_paths = []
@@ -82,13 +93,15 @@ async def process_all_siyuan_img():
         # Extract image paths from content
         paths = IMG_PATH_PATTERN.findall(b_data.markdown or "")
         for img_p in paths:
-            submit_image_analysis_task(ImageAnalysisTaskData(
-                img_path=img_p,
-                source_type=ImageSourceType.SIYUAN_LOCAL,
-                llm_prompt_id=2,
-                model_name="qwen3-vl:2b",
-                extra_data=b_data.model_dump()
-            ))
+            submit_image_analysis_task(
+                ImageAnalysisTaskData(
+                    img_path=img_p,
+                    source_type=ImageSourceType.SIYUAN_LOCAL,
+                    llm_prompt_id=2,
+                    model_name="qwen3-vl:2b",
+                    extra_data=b_data.model_dump(),
+                )
+            )
         img_paths.extend(paths)
 
 

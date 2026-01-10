@@ -2,8 +2,8 @@ import uuid
 
 from sqlmodel import Session
 
-from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
 from app.crud.user import user_crud
+from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
 
 
 def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -> Item:

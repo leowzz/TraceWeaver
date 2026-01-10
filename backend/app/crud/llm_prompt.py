@@ -11,4 +11,3 @@ class LLMPromptCRUD(CRUDBase[LLMPrompt, LLMPrompt, LLMPrompt]):
 
 
 llm_prompt_crud = LLMPromptCRUD(LLMPrompt)
-

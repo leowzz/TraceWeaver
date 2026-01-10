@@ -1,9 +1,9 @@
-from typing import Any, Generic, TypeVar, Union, Sequence
+from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
-from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
-from sqlmodel import Session, SQLModel, col, delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlmodel import Session, SQLModel, col, delete, func, select
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)

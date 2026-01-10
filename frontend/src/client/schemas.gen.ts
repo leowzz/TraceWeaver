@@ -904,6 +904,50 @@ export const SourceTypeSchema = {
     description: 'Data source types.'
 } as const;
 
+export const SyncRequestSchema = {
+    properties: {
+        start_date: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Start Date',
+            description: '同步开始时间'
+        }
+    },
+    type: 'object',
+    required: ['start_date'],
+    title: 'SyncRequest',
+    description: 'Schema for sync request.'
+} as const;
+
+export const SyncResponseSchema = {
+    properties: {
+        total_fetched: {
+            type: 'integer',
+            title: 'Total Fetched',
+            description: '获取的活动总数'
+        },
+        new_count: {
+            type: 'integer',
+            title: 'New Count',
+            description: '新增活动数'
+        },
+        updated_count: {
+            type: 'integer',
+            title: 'Updated Count',
+            description: '更新活动数'
+        },
+        embedded_count: {
+            type: 'integer',
+            title: 'Embedded Count',
+            description: '向量化活动数'
+        }
+    },
+    type: 'object',
+    required: ['total_fetched', 'new_count', 'updated_count', 'embedded_count'],
+    title: 'SyncResponse',
+    description: 'Schema for sync response.'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {

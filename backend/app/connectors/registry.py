@@ -4,9 +4,13 @@ from typing import TypeVar
 
 from app.connectors.base import BaseConnector
 from app.models import SourceConfig, SourceType
-from app.schemas.source_config import SiYuanConfig
+from app.schemas.source_config import DayflowLocalConfig, GitConfig, SiYuanConfig
 
-SourceType2ConfigSchema = {SourceType.SIYUAN: SiYuanConfig}
+SourceType2ConfigSchema = {
+    SourceType.GIT: GitConfig,
+    SourceType.DAYFLOW: DayflowLocalConfig,
+    SourceType.SIYUAN: SiYuanConfig,
+}
 ConnectorType = TypeVar("ConnectorType", bound=BaseConnector)
 
 

@@ -15,7 +15,10 @@ from app.schemas.source_config import (
     SourceConfigPublic,
     SourceConfigsPublic,
     SourceConfigUpdate,
+    SyncRequest,
+    SyncResponse,
 )
+from app.services.sync_service import SyncService
 
 router = APIRouter(prefix="/source-configs", tags=["source-configs"])
 
@@ -147,4 +150,49 @@ async def test_source_config_connection(
         raise HTTPException(
             status_code=400,
             detail=f"Connection test failed: {str(e)}",
+        )
+
+
+@router.post("/{id}/sync", response_model=SyncResponse)
+def sync_source_config(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    sync_request: SyncRequest,
+) -> Any:
+    """
+    Sync activities from a source configuration.
+
+    Fetches activities from the configured data source starting from the specified date,
+    upserts them to the database, and embeds them into vectors.
+    """
+    config = source_config_crud.get(session=session, id=id)
+    if not config:
+        raise HTTPException(status_code=404, detail="Source configuration not found")
+
+    # Ensure user can only sync their own configs
+    if config.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Check if config is active
+    if not config.is_active:
+        raise HTTPException(
+            status_code=400, detail="Cannot sync inactive source configuration"
+        )
+
+    try:
+        sync_service = SyncService()
+        result = sync_service.sync_source_config(
+            source_config=config,
+            user_id=current_user.id,
+            session=session,
+            start_date=sync_request.start_date,
+        )
+        return SyncResponse(**result)
+    except Exception as e:
+        logger.exception(f"Sync failed for source config {id}: {e=}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sync failed: {str(e)}",
         )

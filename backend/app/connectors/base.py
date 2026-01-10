@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Optional, Union
 
 from app.schemas.activity import ActivityCreate
-
+from fastapi import HTTPException
 
 class BaseConnector(ABC):
     """Abstract base class that all data source connectors must implement.
@@ -86,3 +86,10 @@ class BaseConnector(ABC):
         """
         content = f"{source_type}:{source_id}:{occurred_at.isoformat()}"
         return hashlib.sha256(content.encode()).hexdigest()
+
+    async def test_connection(self):
+        try:
+            await self.validate_config()
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))

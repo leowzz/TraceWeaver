@@ -23,6 +23,7 @@ services:
     volumes:
       # 只挂载配置文件，代码文件通过 watch 同步
       - ./backend/config.yaml:/app/config.yaml:ro
+      - "/Users/leo/Library/Application Support/Dayflow:/mnt/Dayflow:ro"
     environment:
       # 确保使用外部数据库（已在 config.yaml 配置）
       - PYTHONUNBUFFERED=1

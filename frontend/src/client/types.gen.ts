@@ -341,6 +341,38 @@ export type SourceConfigUpdate = {
  */
 export type SourceType = 'GIT' | 'DAYFLOW' | 'SIYUAN';
 
+/**
+ * Schema for sync request.
+ */
+export type SyncRequest = {
+    /**
+     * 同步开始时间
+     */
+    start_date: string;
+};
+
+/**
+ * Schema for sync response.
+ */
+export type SyncResponse = {
+    /**
+     * 获取的活动总数
+     */
+    total_fetched: number;
+    /**
+     * 新增活动数
+     */
+    new_count: number;
+    /**
+     * 更新活动数
+     */
+    updated_count: number;
+    /**
+     * 向量化活动数
+     */
+    embedded_count: number;
+};
+
 export type Token = {
     access_token: string;
     token_type?: string;
@@ -640,6 +672,13 @@ export type SourceConfigsTestSourceConfigConnectionData = {
 };
 
 export type SourceConfigsTestSourceConfigConnectionResponse = (Message);
+
+export type SourceConfigsSyncSourceConfigData = {
+    id: number;
+    requestBody: SyncRequest;
+};
+
+export type SourceConfigsSyncSourceConfigResponse = (SyncResponse);
 
 export type UsersReadUsersData = {
     limit?: number;

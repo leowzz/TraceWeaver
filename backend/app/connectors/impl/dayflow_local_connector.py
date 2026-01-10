@@ -9,13 +9,7 @@ from loguru import logger
 from app.connectors.base import BaseConnector
 from app.models.enums import SourceType
 from app.schemas.activity import ActivityCreate
-
-
-class DayflowLocalConfig:
-    """Configuration for local Dayflow database."""
-
-    def __init__(self, db_path: str):
-        self.db_path = db_path
+from app.schemas.source_config import DayflowLocalConfig
 
 
 class DayflowLocalConnector(BaseConnector):
@@ -54,9 +48,11 @@ class DayflowLocalConnector(BaseConnector):
         if not db_path.is_file():
             raise ConnectionError(f"Path is not a file: {self.config.db_path}")
 
-        # Try to open and query database
+        # Try to open and query database (read-only mode)
         try:
-            conn = sqlite3.connect(self.config.db_path)
+            # Use URI mode with read-only flag
+            db_uri = f"file:{self.config.db_path}?mode=ro"
+            conn = sqlite3.connect(db_uri, uri=True)
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM timeline_cards WHERE is_deleted = 0")
             count = cursor.fetchone()[0]
@@ -81,7 +77,9 @@ class DayflowLocalConnector(BaseConnector):
         Returns:
             List of activities representing timeline cards
         """
-        conn = sqlite3.connect(self.config.db_path)
+        # Open database in read-only mode
+        db_uri = f"file:{self.config.db_path}?mode=ro"
+        conn = sqlite3.connect(db_uri, uri=True)
         conn.row_factory = sqlite3.Row  # Access columns by name
         cursor = conn.cursor()
 
@@ -160,7 +158,9 @@ class DayflowLocalConnector(BaseConnector):
             List of all activities
         """
         try:
-            conn = sqlite3.connect(self.config.db_path)
+            # Open database in read-only mode
+            db_uri = f"file:{self.config.db_path}?mode=ro"
+            conn = sqlite3.connect(db_uri, uri=True)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 

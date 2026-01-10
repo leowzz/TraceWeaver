@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
+import DayflowSyncCard from "@/components/DataSources/DayflowSyncCard"
 import useAuth from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/")({
@@ -17,7 +18,7 @@ function Dashboard() {
   const { user: currentUser } = useAuth()
 
   return (
-    <div>
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl truncate max-w-sm">
           Hi, {currentUser?.full_name || currentUser?.email} 👋
@@ -25,6 +26,10 @@ function Dashboard() {
         <p className="text-muted-foreground">
           Welcome back, nice to see you again!!!
         </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DayflowSyncCard />
       </div>
     </div>
   )

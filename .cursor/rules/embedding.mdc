@@ -7,651 +7,71 @@ globs: ["backend/app/services/*embedding*.py", "backend/app/**/*embedding*.py"]
 
 ## 核心原则
 
-TraceWeaver 使用 **[Agno 框架](https://docs.agno.com/basics/knowledge/embedder/overview)** 的 Embedder 抽象层进行文本向量化。
+使用 **Agno 框架** 的 Embedder 抽象层进行文本向量化。
 
-### 为什么选择 Agno？
-
-- **统一接口**：支持多种 Embedder 后端（OpenAI、Ollama、HuggingFace等）
-- **灵活切换**：开发环境用本地模型，生产环境用云端 API
-- **易于扩展**：添加新的 Embedding 提供商只需配置
-- **批量处理**：内置批量 Embedding 优化
+**为什么选择 Agno？**
+- 统一接口，支持多种后端（OpenAI、Ollama、HuggingFace、Gemini、Cohere）
+- 灵活切换：开发用本地模型，生产用云端 API
+- 内置批量处理优化
 
 ## Embedder 配置
 
-### 配置模型定义
-
-使用 Pydantic Schema 管理 Embedder 配置：
-
+### 配置模型
 ```python
 from pydantic import BaseModel
 from typing import Literal, Optional
 
 class EmbedderConfig(BaseModel):
-    """Embedder 配置
-
-    支持的提供商：
-    - openai: OpenAI API（云端，高质量）
-    - ollama: 本地开源模型（隐私保护，无 API 费用）
-    - huggingface: HuggingFace 模型（自托管或云端）
-    - gemini: Google Gemini API
-    - cohere: Cohere API
-    """
     provider: Literal["openai", "ollama", "huggingface", "gemini", "cohere"]
-    model_name: str  # 例如: "text-embedding-3-small", "nomic-embed-text"
-    dimensions: int = 1536  # 向量维度
-
-    # API 配置（云端模型）
+    model_name: str  # 如 "text-embedding-3-small"
+    dimensions: int = 1536
     api_key: Optional[str] = None
-    api_base: Optional[str] = None
-
-    # 本地模型配置（Ollama）
-    base_url: Optional[str] = "http://localhost:11434"
-
-    # 性能配置
-    batch_size: int = 100  # 批量处理大小
-    enable_batch: bool = True  # 是否启用批量处理
-
-    class Config:
-        json_schema_extra = {
-            "examples": [
-                {
-                    "provider": "openai",
-                    "model_name": "text-embedding-3-small",
-                    "dimensions": 1536,
-                    "api_key": "sk-...",
-                    "enable_batch": True,
-                    "batch_size": 100
-                },
-                {
-                    "provider": "ollama",
-                    "model_name": "nomic-embed-text",
-                    "dimensions": 768,
-                    "base_url": "http://localhost:11434"
-                }
-            ]
-        }
+    batch_size: int = 100
+    enable_batch: bool = True
 ```
 
-### 从环境变量或数据库加载配置
-
+### Embedder 工厂
 ```python
-from app.core.config import settings
-
-# 从环境变量加载（系统级配置）
-def get_default_embedder_config() -> EmbedderConfig:
-    return EmbedderConfig(
-        provider=settings.EMBEDDER_PROVIDER,  # 环境变量
-        model_name=settings.EMBEDDER_MODEL,
-        api_key=settings.EMBEDDER_API_KEY,
-        dimensions=settings.EMBEDDER_DIMENSIONS,
-    )
-
-# 从数据库加载（用户级配置）
-def get_user_embedder_config(user_id: str, db: Session) -> EmbedderConfig:
-    user_settings = db.exec(
-        select(UserSettings).where(UserSettings.user_id == user_id)
-    ).first()
-
-    if user_settings and user_settings.embedder_config:
-        return EmbedderConfig(**user_settings.embedder_config)
-
-    return get_default_embedder_config()
-```
-
-## Embedder 工厂
-
-### 创建 Embedder 实例
-
-```python
-from agno.knowledge.embedder.openai import OpenAIEmbedder
-from agno.knowledge.embedder.ollama import OllamaEmbedder
-from agno.knowledge.embedder.huggingface import HuggingFaceEmbedder
-from agno.knowledge.embedder.gemini import GeminiEmbedder
-from agno.knowledge.embedder.cohere import CohereEmbedder
-
 class EmbedderFactory:
-    """Embedder 工厂 - 根据配置创建 Embedder 实例"""
-
     @staticmethod
     def create(config: EmbedderConfig):
-        """根据配置创建 Embedder
-
-        Args:
-            config: Embedder 配置
-
-        Returns:
-            Agno Embedder 实例
-
-        Raises:
-            ValueError: 不支持的提供商
-        """
         if config.provider == "openai":
-            return OpenAIEmbedder(
-                id=config.model_name,
-                dimensions=config.dimensions,
-                api_key=config.api_key,
-                enable_batch=config.enable_batch,
-                batch_size=config.batch_size,
-            )
-
+            return OpenAIEmbedder(id=config.model_name, ...)
         elif config.provider == "ollama":
-            return OllamaEmbedder(
-                id=config.model_name,
-                dimensions=config.dimensions,
-                host=config.base_url,
-            )
-
-        elif config.provider == "huggingface":
-            return HuggingFaceEmbedder(
-                id=config.model_name,
-                api_key=config.api_key,
-            )
-
-        elif config.provider == "gemini":
-            return GeminiEmbedder(
-                id=config.model_name,
-                api_key=config.api_key,
-            )
-
-        elif config.provider == "cohere":
-            return CohereEmbedder(
-                id=config.model_name,
-                api_key=config.api_key,
-            )
-
-        else:
-            raise ValueError(f"Unsupported embedder provider: {config.provider}")
+            return OllamaEmbedder(id=config.model_name, ...)
+        # ... 其他提供商
 ```
 
 ## Embedding 服务
 
-### 文本分块
+### 核心流程
+1. **文本分块**：将长文本切分（chunk_size=512, overlap=50）
+2. **批量向量化**：`embedder.get_embeddings(chunks)`
+3. **存储向量**：创建 `ActivityEmbedding` 记录并提交
 
-将长文本切分为适合向量化的块：
-
-```python
-from typing import List
-from loguru import logger
-
-class EmbeddingService:
-    """Embedding 服务 - 处理文本向量化"""
-
-    def __init__(self, embedder_config: EmbedderConfig):
-        self.embedder = EmbedderFactory.create(embedder_config)
-        self.config = embedder_config
-
-    def chunk_text(
-        self,
-        text: str,
-        chunk_size: int = 512,
-        overlap: int = 50
-    ) -> List[str]:
-        """将长文本分块
-
-        Args:
-            text: 原始文本
-            chunk_size: 块大小（字符数，建议 300-1000）
-            overlap: 重叠大小（保持上下文连贯性）
-
-        Returns:
-            文本块列表
-        """
-        # 短文本不分块
-        if len(text) <= chunk_size:
-            return [text]
-
-        chunks = []
-        start = 0
-
-        while start < len(text):
-            end = min(start + chunk_size, len(text))
-
-            # 尝试在句子边界切分
-            if end < len(text):
-                # 查找最近的句号、问号或换行符
-                for delimiter in ['. ', '。', '\n', '? ', '！']:
-                    last_delimiter = text.rfind(delimiter, start, end)
-                    if last_delimiter > start + chunk_size // 2:
-                        end = last_delimiter + len(delimiter)
-                        break
-
-            chunk = text[start:end].strip()
-            if chunk:
-                chunks.append(chunk)
-
-            # 移动起始位置，保留重叠
-            start = end - overlap if end < len(text) else end
-
-        logger.debug(f"Text split into {len(chunks)} chunks")
-        return chunks
-```
-
-### 向量化活动
+### 检索服务
+- 使用 pgvector 的 `<=>` 运算符进行余弦相似度搜索
+- 相似度 = `1 - (embedding <=> query_embedding)`
+- 为 LLM 构建上下文：Top-K 片段拼接成 Markdown
 
 ```python
-from sqlmodel import Session
-from app.models.activity import Activity
-from app.models.activity_embedding import ActivityEmbedding
-
-class EmbeddingService:
-    # ... 前面的代码 ...
-
-    def embed_activity(
-        self,
-        activity: Activity,
-        db: Session
-    ) -> List[ActivityEmbedding]:
-        """为活动生成向量
-
-        Args:
-            activity: 活动对象
-            db: 数据库 Session
-
-        Returns:
-            生成的向量记录列表
-        """
-        # 构建待向量化的文本
-        text = f"{activity.title}\n\n{activity.content or ''}"
-
-        # 文本分块
-        chunks = self.chunk_text(text)
-        logger.info(
-            f"Activity {activity.id} split into {len(chunks)} chunks",
-            activity_id=activity.id,
-            chunks_count=len(chunks)
-        )
-
-        # 批量向量化
-        try:
-            embeddings_list = self.embedder.get_embeddings(chunks)
-        except Exception as e:
-            logger.error(
-                f"Failed to embed activity {activity.id}: {e}",
-                activity_id=activity.id,
-                error=str(e)
-            )
-            raise
-
-        # 创建向量记录
-        embedding_records = []
-        for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings_list)):
-            record = ActivityEmbedding(
-                activity_id=activity.id,
-                user_id=activity.user_id,
-                embedding=embedding,
-                chunk_text=chunk,
-                chunk_index=idx,
-                embedder_model=self.config.model_name,
-                embedder_provider=self.config.provider,
-            )
-            embedding_records.append(record)
-            db.add(record)
-
-        db.commit()
-        logger.info(
-            f"Created {len(embedding_records)} embeddings for activity {activity.id}",
-            activity_id=activity.id,
-            embeddings_count=len(embedding_records)
-        )
-
-        return embedding_records
-
-    def embed_activities_batch(
-        self,
-        activities: List[Activity],
-        db: Session
-    ) -> int:
-        """批量向量化多个活动
-
-        Args:
-            activities: 活动对象列表
-            db: 数据库 Session
-
-        Returns:
-            成功向量化的活动数量
-        """
-        success_count = 0
-
-        for activity in activities:
-            try:
-                self.embed_activity(activity, db)
-                success_count += 1
-            except Exception as e:
-                logger.error(
-                    f"Failed to embed activity {activity.id}, skipping",
-                    activity_id=activity.id,
-                    error=str(e)
-                )
-                continue
-
-        logger.info(
-            f"Batch embedding completed: {success_count}/{len(activities)} activities",
-            total=len(activities),
-            success=success_count
-        )
-
-        return success_count
-```
-
-## 检索服务
-
-### 语义搜索
-
-```python
-from sqlalchemy import text
-from typing import List, Tuple
-
-class RetrievalService:
-    """检索服务 - 执行向量相似性搜索"""
-
-    def __init__(self, embedder_config: EmbedderConfig):
-        self.embedder = EmbedderFactory.create(embedder_config)
-
-    def search(
-        self,
-        query: str,
-        user_id: str,
-        db: Session,
-        top_k: int = 5,
-        min_similarity: float = 0.7,
-    ) -> List[Tuple[ActivityEmbedding, float]]:
-        """语义搜索
-
-        Args:
-            query: 查询文本
-            user_id: 用户 ID（数据隔离）
-            db: 数据库 Session
-            top_k: 返回结果数量
-            min_similarity: 最小相似度阈值（0-1，余弦相似度）
-
-        Returns:
-            (向量记录, 相似度分数) 元组列表
-        """
-        # 查询向量化
-        try:
-            query_embedding = self.embedder.get_embedding(query)
-        except Exception as e:
-            logger.error(f"Failed to embed query: {e}", error=str(e))
-            raise
-
-        # 向量相似性搜索（使用余弦相似度）
-        # pgvector 的 <=> 运算符计算余弦距离（0-2）
-        # 相似度 = 1 - 距离
-        sql = text("""
-            SELECT
-                id,
-                activity_id,
-                chunk_text,
-                chunk_index,
-                embedder_model,
-                1 - (embedding <=> :query_embedding) AS similarity
-            FROM activity_embedding
-            WHERE user_id = :user_id
-            AND 1 - (embedding <=> :query_embedding) > :min_similarity
-            ORDER BY embedding <=> :query_embedding
-            LIMIT :top_k
-        """)
-
-        results = db.execute(
-            sql,
-            {
-                "query_embedding": str(query_embedding),  # pgvector 格式
-                "user_id": user_id,
-                "min_similarity": min_similarity,
-                "top_k": top_k,
-            }
-        ).fetchall()
-
-        logger.info(
-            f"Search found {len(results)} results",
-            query=query[:50],
-            results_count=len(results)
-        )
-
-        return results
-
-    def get_context_for_llm(
-        self,
-        query: str,
-        user_id: str,
-        db: Session,
-        max_tokens: int = 2000,
-    ) -> str:
-        """为 LLM 构建上下文
-
-        Args:
-            query: 查询文本
-            user_id: 用户 ID
-            db: 数据库 Session
-            max_tokens: 最大 token 数（粗略估计：1 token ≈ 4 字符）
-
-        Returns:
-            上下文文本（Markdown 格式）
-        """
-        results = self.search(query, user_id, db, top_k=10)
-
-        context_parts = ["# 相关上下文\n"]
-        total_chars = 0
-        max_chars = max_tokens * 4  # 粗略估计
-
-        for idx, row in enumerate(results, 1):
-            chunk_text = row.chunk_text
-            similarity = row.similarity
-            activity_id = row.activity_id
-
-            # 构建上下文片段
-            part = f"\n## 片段 {idx} (相似度: {similarity:.2f})\n{chunk_text}\n"
-
-            if total_chars + len(part) > max_chars:
-                break
-
-            context_parts.append(part)
-            total_chars += len(part)
-
-        context = "\n".join(context_parts)
-        logger.debug(f"Built context with {len(context_parts)-1} chunks, {total_chars} chars")
-
-        return context
-```
-
-## 模型切换与迁移
-
-### 更换 Embedder 时需重新向量化
-
-```python
-class EmbeddingMigrationService:
-    """Embedder 迁移服务"""
-
-    def migrate_embeddings(
-        self,
-        old_model: str,
-        new_config: EmbedderConfig,
-        db: Session,
-        user_id: Optional[str] = None,
-    ):
-        """迁移到新的 Embedder
-
-        Args:
-            old_model: 旧模型名称
-            new_config: 新模型配置
-            db: 数据库 Session
-            user_id: 用户 ID（可选，为空则迁移所有用户）
-        """
-        logger.info(
-            f"Starting embedding migration from {old_model} to {new_config.model_name}"
-        )
-
-        # 1. 删除旧向量
-        statement = delete(ActivityEmbedding).where(
-            ActivityEmbedding.embedder_model == old_model
-        )
-        if user_id:
-            statement = statement.where(ActivityEmbedding.user_id == user_id)
-
-        result = db.exec(statement)
-        db.commit()
-        logger.info(f"Deleted {result.rowcount} old embeddings")
-
-        # 2. 获取需要重新向量化的活动
-        statement = select(Activity)
-        if user_id:
-            statement = statement.where(Activity.user_id == user_id)
-
-        activities = db.exec(statement).all()
-        logger.info(f"Found {len(activities)} activities to re-embed")
-
-        # 3. 使用新模型重新向量化
-        embedding_service = EmbeddingService(new_config)
-        success_count = embedding_service.embed_activities_batch(activities, db)
-
-        logger.info(
-            f"Migration completed: {success_count}/{len(activities)} activities re-embedded"
-        )
+sql = text("""
+    SELECT *, 1 - (embedding <=> :query_embedding) AS similarity
+    FROM activity_embedding
+    WHERE user_id = :user_id
+    ORDER BY embedding <=> :query_embedding
+    LIMIT :top_k
+""")
 ```
 
 ## 性能优化
 
-### 批量处理
+- **批量处理**：启用 `enable_batch=True`
+- **异步任务**：使用 Celery 异步向量化
+- **缓存**：避免重复向量化相同文本
+- **重试机制**：使用 tenacity 处理 API 限流
 
-使用 Agno 的批量 Embedding 功能：
+## 模型切换
 
-```python
-# ✅ 正确：启用批量处理
-config = EmbedderConfig(
-    provider="openai",
-    model_name="text-embedding-3-small",
-    enable_batch=True,  # 启用批量
-    batch_size=100,  # 每批 100 条
-)
-
-# Agno 会自动将多个文本合并为一个 API 请求
-embeddings = embedder.get_embeddings(chunks)  # 内部批量处理
-```
-
-### 异步处理
-
-对于大批量数据，使用 Celery 异步任务：
-
-```python
-from app.workers.tasks import embed_activity_task
-
-# 在同步流程中触发异步任务
-@router.post("/sync")
-def sync_activities(user_id: str, db: Session):
-    # 同步数据
-    activities = sync_service.sync_all(user_id)
-
-    # 异步向量化
-    for activity in activities:
-        embed_activity_task.delay(activity.id)
-
-    return {"synced": len(activities)}
-
-# Celery 任务
-@celery_app.task
-def embed_activity_task(activity_id: int):
-    with Session(engine) as db:
-        activity = db.get(Activity, activity_id)
-        if activity:
-            embedding_service.embed_activity(activity, db)
-```
-
-### 缓存向量
-
-避免重复向量化相同的文本：
-
-```python
-from functools import lru_cache
-import hashlib
-
-class EmbeddingService:
-    def __init__(self, embedder_config: EmbedderConfig):
-        self.embedder = EmbedderFactory.create(embedder_config)
-        self._embedding_cache = {}
-
-    def _get_text_hash(self, text: str) -> str:
-        """计算文本哈希"""
-        return hashlib.sha256(text.encode()).hexdigest()
-
-    def get_embedding_cached(self, text: str) -> List[float]:
-        """带缓存的向量化"""
-        text_hash = self._get_text_hash(text)
-
-        if text_hash in self._embedding_cache:
-            logger.debug(f"Cache hit for text hash {text_hash[:8]}")
-            return self._embedding_cache[text_hash]
-
-        embedding = self.embedder.get_embedding(text)
-        self._embedding_cache[text_hash] = embedding
-        return embedding
-```
-
-## 错误处理
-
-### 处理 API 限流
-
-```python
-import time
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-class EmbeddingService:
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
-    )
-    def embed_with_retry(self, text: str) -> List[float]:
-        """带重试的向量化"""
-        try:
-            return self.embedder.get_embedding(text)
-        except Exception as e:
-            logger.warning(f"Embedding failed, retrying: {e}")
-            raise
-```
-
-### 降级策略
-
-```python
-def embed_activity_safe(
-    self,
-    activity: Activity,
-    db: Session
-) -> Optional[List[ActivityEmbedding]]:
-    """安全的向量化（失败不抛异常）"""
-    try:
-        return self.embed_activity(activity, db)
-    except Exception as e:
-        logger.error(
-            f"Failed to embed activity {activity.id}, skipping",
-            activity_id=activity.id,
-            error=str(e),
-            exc_info=True
-        )
-        return None
-```
-
-## 监控与日志
-
-### 记录关键指标
-
-```python
-from loguru import logger
-
-# 记录向量化耗时
-import time
-
-def embed_activity(self, activity: Activity, db: Session):
-    start_time = time.time()
-
-    # 向量化逻辑
-    ...
-
-    elapsed = time.time() - start_time
-    logger.info(
-        "Activity embedded",
-        activity_id=activity.id,
-        chunks_count=len(chunks),
-        elapsed_seconds=elapsed,
-        embedder_provider=self.config.provider,
-        embedder_model=self.config.model_name
-    )
-```
+- 更换 Embedder 需**重新向量化所有数据**
+- 删除旧向量 → 获取活动列表 → 使用新模型批量向量化

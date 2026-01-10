@@ -2,7 +2,7 @@
 # 使用 Vite 开发服务器，支持热重载
 # 注意：源代码通过 docker compose watch 同步更新
 
-FROM node:24
+FROM node:25
 
 WORKDIR /app
 

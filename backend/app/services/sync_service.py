@@ -19,7 +19,7 @@ class SyncService:
         """Initialize sync service."""
         self.embedding_service = EmbeddingService()
 
-    def sync_source_config(
+    async def sync_source_config(
         self,
         source_config: SourceConfig,
         user_id: UUID,
@@ -63,17 +63,8 @@ class SyncService:
 
         # Note: fetch_activities is async but we're calling it synchronously
         # We need to handle this properly
-        import asyncio
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        activity_creates = loop.run_until_complete(
-            connector.fetch_activities(start_time=start_date, end_time=end_time)
-        )
+        activity_creates = await connector.fetch_activities(start_time=start_date, end_time=end_time)
 
         # Set user_id for all activities
         for activity_create in activity_creates:

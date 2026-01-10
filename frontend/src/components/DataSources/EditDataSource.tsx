@@ -351,13 +351,14 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
               )}
             </div>
 
-            <DialogFooter className="flex items-center justify-between">
+            <DialogFooter className="flex items-center justify-between sm:flex-row">
               <LoadingButton
                 type="button"
                 variant="outline"
                 onClick={() => testConnectionMutation.mutate()}
                 loading={testConnectionMutation.isPending}
                 disabled={mutation.isPending}
+                className="sm:mr-auto"
               >
                 <TestTube className="mr-2 h-4 w-4" />
                 测试连接

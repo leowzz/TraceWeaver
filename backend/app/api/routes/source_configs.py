@@ -154,7 +154,7 @@ async def test_source_config_connection(
 
 
 @router.post("/{id}/sync", response_model=SyncResponse)
-def sync_source_config(
+async def sync_source_config(
     *,
     session: SessionDep,
     current_user: CurrentUser,
@@ -183,7 +183,7 @@ def sync_source_config(
 
     try:
         sync_service = SyncService()
-        result = sync_service.sync_source_config(
+        result = await sync_service.sync_source_config(
             source_config=config,
             user_id=current_user.id,
             session=session,

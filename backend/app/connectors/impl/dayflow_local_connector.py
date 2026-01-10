@@ -63,7 +63,7 @@ class DayflowLocalConnector(BaseConnector):
         except sqlite3.Error as e:
             raise ConnectionError(f"Failed to access Dayflow database: {e}")
 
-    def fetch_activities(
+    async def fetch_activities(
         self,
         start_time: datetime,
         end_time: datetime,

@@ -33,5 +33,3 @@ class ImageAnalysisTaskData(BaseModel):
         if not v:
             raise ValueError("llm_prompt_id cannot be empty")
         return v
-
-

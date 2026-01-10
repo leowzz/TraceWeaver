@@ -5,11 +5,12 @@ Run with: pytest test_crud_base.py -v
 """
 
 import pytest
+from pydantic import BaseModel
 from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import SQLModel, Session, Field, create_engine
+from sqlmodel import Field, Session, SQLModel, create_engine
+
 from app.crud.base import CRUDBase
-from pydantic import BaseModel
 
 
 # Test Models
@@ -51,9 +52,11 @@ def engine():
     """Create an in-memory SQLite database for testing."""
     # Replace JSONB with JSON for SQLite compatibility
     replace_jsonb_with_json()
-    
+
     sqlite_url = "sqlite:///:memory:"
-    engine = create_engine(sqlite_url, echo=False, connect_args={"check_same_thread": False})
+    engine = create_engine(
+        sqlite_url, echo=False, connect_args={"check_same_thread": False}
+    )
     SQLModel.metadata.create_all(engine)
     yield engine
     SQLModel.metadata.drop_all(engine)
@@ -163,9 +166,7 @@ class TestRead:
     def test_get_multi(self, db, hero_crud):
         """Test getting multiple records with pagination."""
         for i in range(5):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         heroes = hero_crud.get_multi(db, skip=1, limit=2)
         assert len(heroes) == 2
@@ -184,9 +185,7 @@ class TestRead:
     def test_get_all(self, db, hero_crud):
         """Test getting all records."""
         for i in range(3):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         heroes = hero_crud.get_all(db)
         assert len(heroes) == 3
@@ -205,9 +204,7 @@ class TestPagination:
     def test_limit_offset_page(self, db, hero_crud):
         """Test limit-offset pagination."""
         for i in range(10):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         items, total = hero_crud.limit_offset_page(db, page=2, limit=3)
         assert total == 10
@@ -216,9 +213,7 @@ class TestPagination:
     def test_limit_offset_page_with_skip(self, db, hero_crud):
         """Test limit-offset pagination with skip."""
         for i in range(10):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         items, total = hero_crud.limit_offset_page(db, skip=1, page=2, limit=2)
         # offset = (2-1)*2 + 1 = 3
@@ -228,9 +223,7 @@ class TestPagination:
     def test_has_more_page_true(self, db, hero_crud):
         """Test cursor pagination when there are more items."""
         for i in range(10):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         items, has_more = hero_crud.has_more_page(db, limit=5)
         assert len(items) == 5
@@ -239,9 +232,7 @@ class TestPagination:
     def test_has_more_page_false(self, db, hero_crud):
         """Test cursor pagination when there are no more items."""
         for i in range(3):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         items, has_more = hero_crud.has_more_page(db, limit=5)
         assert len(items) == 3
@@ -256,9 +247,7 @@ class TestPagination:
             )
             heroes.append(hero)
 
-        items, has_more = hero_crud.has_more_page(
-            db, last_id=heroes[4].id, limit=3
-        )
+        items, has_more = hero_crud.has_more_page(db, last_id=heroes[4].id, limit=3)
         assert len(items) == 3
         assert has_more is True
         # Should get items after ID 5
@@ -342,9 +331,7 @@ class TestUtility:
         assert hero_crud.count(db) == 0
 
         for i in range(5):
-            hero_crud.create(
-                db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}")
-            )
+            hero_crud.create(db, HeroCreate(name=f"Hero{i}", secret_name=f"Secret{i}"))
 
         assert hero_crud.count(db) == 5
 

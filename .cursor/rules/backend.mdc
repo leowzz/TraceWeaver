@@ -261,16 +261,16 @@ class MyConnector(BaseConnector):
     def __init__(self, config: MyConfig):
         super().__init__(config)
         self.config: MyConfig = config
-    
+
     @property
     def source_type(self) -> str:
         return SourceType.MY_SOURCE.value
-    
+
     async def validate_config(self) -> bool:
         """验证配置有效性"""
         # 实现验证逻辑
         return True
-    
+
     async def fetch_activities(
         self,
         start_time: datetime,
@@ -291,7 +291,7 @@ from pydantic import BaseModel, HttpUrl
 class SiYuanConfig(BaseModel):
     api_url: HttpUrl
     api_token: str
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -353,17 +353,17 @@ except ConnectorError as e:
 class ActivityService:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def sync_source(self, config: SourceConfig) -> List[Activity]:
         ...
-    
+
     def get_activities(self, user_id: str, filters: ActivityFilter) -> List[Activity]:
         ...
 
 class EmbeddingService:
     def __init__(self, embedder_config: EmbedderConfig):
         self.embedder = EmbedderFactory.create(embedder_config)
-    
+
     def embed_activity(self, activity: Activity) -> List[ActivityEmbedding]:
         ...
 ```
@@ -403,7 +403,7 @@ def test_activity_creation(session: Session):
     session.add(activity)
     session.commit()
     session.refresh(activity)
-    
+
     assert activity.id is not None
     assert activity.title == "Test commit"
 ```
@@ -416,12 +416,12 @@ from unittest.mock import Mock, patch
 def test_git_connector():
     config = GitConfig(repo_path="/tmp/test-repo", branch="main")
     connector = GitConnector(config)
-    
+
     with patch("git.Repo") as mock_repo:
         # Mock 外部 Git 库
         mock_repo.return_value.iter_commits.return_value = []
         activities = await connector.fetch_activities(start, end)
-        
+
     assert len(activities) == 0
 ```
 

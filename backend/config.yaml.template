@@ -56,14 +56,14 @@ embedder:
   provider: "ollama"  # openai, ollama, huggingface, gemini, cohere
   model_name: "qwen3-embedding:0.6b"
   dimensions: 1024  # embedder模型的向量维度
-  
+
   # Ollama 配置
   base_url: "http://192.168.177.20:11434"
-  
+
   # 性能配置
   batch_size: 100
   enable_batch: true
-  
+
   # API 配置（使用云端模型时需要）
   api_key: null
   api_base: null

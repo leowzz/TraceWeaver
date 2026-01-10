@@ -1,10 +1,9 @@
-from typing import Optional
-import secrets
 import warnings
-from typing import Annotated, Any, Literal
 from pathlib import Path
+from typing import Annotated, Any, Literal
 
 import yaml
+from loguru import logger
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -15,9 +14,12 @@ from pydantic import (
     computed_field,
     model_validator,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 from typing_extensions import Self
-from loguru import logger
 
 
 def parse_cors(v: Any) -> list[str] | str:
@@ -53,18 +55,18 @@ class RedisConfig(BaseModel):
 
 class CeleryConfig(BaseModel):
     worker_concurrency: int = 2
-    tmp_data_dir: Optional[str] = None
+    tmp_data_dir: str | None = None
 
 
 class SmtpConfig(BaseModel):
-    host: Optional[str] = None
+    host: str | None = None
     port: int = 587
-    user: Optional[str] = None
-    password: Optional[str] = None
+    user: str | None = None
+    password: str | None = None
     tls: bool = True
     ssl: bool = False
-    from_email: Optional[EmailStr] = None
-    from_name: Optional[str] = None
+    from_email: EmailStr | None = None
+    from_name: str | None = None
 
 
 class AuthConfig(BaseModel):
@@ -75,7 +77,7 @@ class AuthConfig(BaseModel):
 
 
 class MonitoringConfig(BaseModel):
-    sentry_dsn: Optional[HttpUrl] = None
+    sentry_dsn: HttpUrl | None = None
 
 
 class EmbedderConfig(BaseModel):
@@ -85,8 +87,8 @@ class EmbedderConfig(BaseModel):
     base_url: str = "http://192.168.177.20:11434"
     batch_size: int = 100
     enable_batch: bool = True
-    api_key: Optional[str] = None
-    api_base: Optional[str] = None
+    api_key: str | None = None
+    api_base: str | None = None
 
 
 class DayflowConfig(BaseModel):

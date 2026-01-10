@@ -131,9 +131,9 @@ export const useActivities = (userId: string) => {
 // ✅ 正确：使用 useMutation
 export const useCreateActivity = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: (data: ActivityCreate) => 
+    mutationFn: (data: ActivityCreate) =>
       ActivitiesService.createActivity({ requestBody: data }),
     onSuccess: () => {
       // 刷新活动列表
@@ -146,10 +146,10 @@ export const useCreateActivity = () => {
 const ActivityListPage: FC = () => {
   const { data, isLoading, error } = useActivities('user-id')
   const createMutation = useCreateActivity()
-  
+
   if (isLoading) return <Loading />
   if (error) return <Error message={error.message} />
-  
+
   return (
     <div>
       {data?.map(activity => (
@@ -182,18 +182,18 @@ const ActivityListPage: FC = () => {
 ```typescript
 // 乐观更新
 const updateMutation = useMutation({
-  mutationFn: (data: ActivityUpdate) => 
+  mutationFn: (data: ActivityUpdate) =>
     ActivitiesService.updateActivity({ id: data.id, requestBody: data }),
   onMutate: async (newData) => {
     // 取消正在进行的查询
     await queryClient.cancelQueries({ queryKey: ['activities', newData.id] })
-    
+
     // 保存旧数据
     const previousData = queryClient.getQueryData(['activities', newData.id])
-    
+
     // 乐观更新
     queryClient.setQueryData(['activities', newData.id], newData)
-    
+
     return { previousData }
   },
   onError: (err, newData, context) => {
@@ -226,13 +226,13 @@ interface ActivitySearchParams {
 
 export const Route = createFileRoute('/activities')({
   component: ActivitiesPage,
-  
+
   // 类型安全的搜索参数
   validateSearch: (search: Record<string, unknown>): ActivitySearchParams => ({
     filter: search.filter as ActivitySearchParams['filter'],
     date: search.date as string,
   }),
-  
+
   // 数据预加载
   loader: async ({ context }) => {
     const activities = await ActivitiesService.listActivities({
@@ -247,7 +247,7 @@ function ActivitiesPage() {
   const { activities } = Route.useLoaderData()
   const { filter, date } = Route.useSearch()
   const navigate = Route.useNavigate()
-  
+
   return (
     <div>
       <button onClick={() => navigate({ search: { filter: 'git' } })}>
@@ -275,8 +275,8 @@ navigate({ to: '..', }) // 返回上级
 // ✅ 正确：Link 组件
 import { Link } from '@tanstack/react-router'
 
-<Link 
-  to="/activities/$id" 
+<Link
+  to="/activities/$id"
   params={{ id: activity.id }}
   className="text-primary hover:underline"
 >
@@ -297,14 +297,14 @@ import { useToast } from '@/components/ui/use-toast'
 // ✅ 正确：使用 shadcn/ui 组件
 export const ActivityForm: FC = () => {
   const { toast } = useToast()
-  
+
   const handleSubmit = () => {
     toast({
       title: '保存成功',
       description: '活动已创建',
     })
   }
-  
+
   return (
     <Card>
       <CardHeader>
@@ -379,9 +379,9 @@ import { cn } from '@/lib/utils'
 ```typescript
 // ✅ 正确：移动优先的响应式设计
 <div className="
-  grid grid-cols-1           
-  md:grid-cols-2            
-  lg:grid-cols-3            
+  grid grid-cols-1
+  md:grid-cols-2
+  lg:grid-cols-3
   gap-4
 ">
   {items.map(item => <Card key={item.id} {...item} />)}
@@ -402,7 +402,7 @@ import { cn } from '@/lib/utils'
 ```typescript
 // ✅ 正确：支持深色模式
 <div className="
-  bg-background 
+  bg-background
   text-foreground
   border border-border
   dark:bg-background
@@ -426,12 +426,12 @@ import { cn } from '@/lib/utils'
 
 ```typescript
 // ✅ 正确：使用生成的类型
-import type { 
-  Activity, 
-  ActivityCreate, 
+import type {
+  Activity,
+  ActivityCreate,
   ActivityUpdate,
   SourceConfig,
-  SourceType 
+  SourceType
 } from '@/client/types.gen'
 
 interface ActivityFormData {
@@ -528,18 +528,18 @@ export const ActivityForm: FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<ActivityFormData>({
     resolver: zodResolver(activitySchema),
   })
-  
+
   const createMutation = useCreateActivity()
-  
+
   const onSubmit = (data: ActivityFormData) => {
     createMutation.mutate(data)
   }
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Input {...register('title')} placeholder="标题" />
       {errors.title && <span className="text-destructive">{errors.title.message}</span>}
-      
+
       <Button type="submit" loading={createMutation.isPending}>
         保存
       </Button>
@@ -570,11 +570,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     super(props)
     this.state = { hasError: false }
   }
-  
+
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error }
   }
-  
+
   render() {
     if (this.state.hasError) {
       return this.props.fallback || (
@@ -584,7 +584,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         </div>
       )
     }
-    
+
     return this.props.children
   }
 }
@@ -597,7 +597,7 @@ import { useToast } from '@/components/ui/use-toast'
 
 export const useActivities = () => {
   const { toast } = useToast()
-  
+
   return useQuery({
     queryKey: ['activities'],
     queryFn: () => ActivitiesService.listActivities(),

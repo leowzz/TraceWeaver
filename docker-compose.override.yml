@@ -1,3 +1,18 @@
+# Docker Compose Override 配置
+# 
+# 此文件用于完整的本地开发环境，包含所有服务：
+# - proxy (Traefik)
+# - db (PostgreSQL)
+# - adminer (数据库管理)
+# - mailcatcher (邮件测试)
+# - backend + frontend
+# - playwright (E2E 测试)
+#
+# 如果只需要运行 backend + frontend（使用外部数据库），请使用：
+#   docker compose -f docker-compose.dev.yml watch
+#
+# 此文件保留作为完整本地环境配置，会自动被 docker-compose.yml 加载
+
 services:
 
   # Local services are available on their ports, but also available on:

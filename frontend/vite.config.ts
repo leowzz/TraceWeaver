@@ -19,4 +19,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: "0.0.0.0", // 允许从容器外部访问
+    port: 5173,
+    watch: {
+      usePolling: true, // 在 Docker 中使用轮询模式确保文件变化被检测到
+    },
+  },
 })

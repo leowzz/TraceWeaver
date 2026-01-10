@@ -58,38 +58,38 @@ from app.schemas.activity import ActivityCreate
 
 class BaseConnector(ABC):
     """所有数据源连接器的基类"""
-    
+
     def __init__(self, config):
         """初始化连接器
-        
+
         Args:
             config: 数据源配置 Schema（Pydantic BaseModel）
         """
         self.config = config
-    
+
     @property
     @abstractmethod
     def source_type(self) -> str:
         """返回数据源类型标识
-        
+
         Returns:
             数据源类型字符串（如 "git", "jira", "notion"）
         """
         pass
-    
+
     @abstractmethod
     async def validate_config(self) -> bool:
         """验证配置有效性
-        
+
         Returns:
             True 如果配置有效
-            
+
         Raises:
             ValueError: 配置格式错误
             ConnectionError: 无法连接到数据源
         """
         pass
-    
+
     @abstractmethod
     async def fetch_activities(
         self,
@@ -97,20 +97,20 @@ class BaseConnector(ABC):
         end_time: datetime,
     ) -> List[ActivityCreate]:
         """抓取指定时间范围内的活动数据
-        
+
         Args:
             start_time: 开始时间
             end_time: 结束时间
-            
+
         Returns:
             ActivityCreate 对象列表
-            
+
         Raises:
             ValueError: 配置错误
             ConnectionError: 连接失败
         """
         pass
-    
+
     def generate_fingerprint(
         self,
         source_type: str,
@@ -118,12 +118,12 @@ class BaseConnector(ABC):
         occurred_at: datetime,
     ) -> str:
         """生成活动指纹（用于去重）
-        
+
         Args:
             source_type: 数据源类型
             source_id: 来源方的唯一 ID
             occurred_at: 发生时间
-            
+
         Returns:
             SHA256 哈希字符串
         """
@@ -156,7 +156,7 @@ class JiraConfig(BaseModel):
     api_url: HttpUrl  # Jira 实例地址
     api_token: str  # API Token
     project_key: str  # 项目键（如 "PROJ"）
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -185,23 +185,23 @@ from app.schemas.source_config import JiraConfig
 
 class JiraConnector(BaseConnector):
     """Jira 数据源连接器"""
-    
+
     def __init__(self, config: JiraConfig):
         """初始化 Jira 连接器
-        
+
         Args:
             config: JiraConfig 配置对象
         """
         super().__init__(config)
         self.config: JiraConfig = config
-    
+
     @property
     def source_type(self) -> str:
         return SourceType.JIRA.value  # 需要在 enums.py 中添加
-    
+
     async def validate_config(self) -> bool:
         """验证 Jira 配置
-        
+
         测试连接并验证 API Token 是否有效
         """
         try:
@@ -211,27 +211,27 @@ class JiraConnector(BaseConnector):
                     headers={"Authorization": f"Bearer {self.config.api_token}"},
                     timeout=5.0,
                 )
-                
+
                 if response.status_code != 200:
                     raise ConnectionError(f"Jira API 返回状态 {response.status_code}")
-                
+
                 logger.info("Jira 配置验证成功")
                 return True
-                
+
         except httpx.RequestError as e:
             raise ConnectionError(f"无法连接到 Jira: {e}")
-    
+
     async def fetch_activities(
         self,
         start_time: datetime,
         end_time: datetime,
     ) -> List[ActivityCreate]:
         """从 Jira 获取 Issues
-        
+
         Args:
             start_time: 开始时间
             end_time: 结束时间
-            
+
         Returns:
             ActivityCreate 对象列表
         """
@@ -241,7 +241,7 @@ class JiraConnector(BaseConnector):
             f'AND updated >= "{start_time.strftime("%Y-%m-%d")}" '
             f'AND updated <= "{end_time.strftime("%Y-%m-%d")}"'
         )
-        
+
         # 调用 Jira API
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -251,7 +251,7 @@ class JiraConnector(BaseConnector):
             )
             response.raise_for_status()
             data = response.json()
-        
+
         # 转换为 Activity
         activities = []
         for issue in data.get("issues", []):
@@ -277,13 +277,13 @@ class JiraConnector(BaseConnector):
                 ),
             )
             activities.append(activity)
-        
+
         logger.info(
             f"从 Jira 获取了 {len(activities)} 个 Issues",
             project=self.config.project_key,
             count=len(activities)
         )
-        
+
         return activities
 ```
 
@@ -319,7 +319,7 @@ class ConnectorRegistry:
             "dayflow": DayflowConnector,
             "jira": JiraConnector,  # 注册
         }
-    
+
     def get(self, source_type: str):
         if source_type not in self._connectors:
             raise ValueError(f"Unknown connector type: {source_type}")
@@ -358,19 +358,19 @@ from pydantic import BaseModel, HttpUrl, Field, validator
 class MySourceConfig(BaseModel):
     # HTTP(S) URL
     api_url: HttpUrl
-    
+
     # 字符串（带长度限制）
     api_token: str = Field(min_length=10, max_length=200)
-    
+
     # 可选字段
     project_id: Optional[str] = None
-    
+
     # 枚举
     environment: Literal["production", "staging"] = "production"
-    
+
     # 整数（带范围）
     timeout: int = Field(default=30, ge=1, le=300)
-    
+
     # 自定义验证
     @validator("api_token")
     def validate_token(cls, v):
@@ -386,7 +386,7 @@ class MySourceConfig(BaseModel):
 ```python
 class MySourceConfig(BaseModel):
     api_token: str = Field(..., json_schema_extra={"format": "password"})
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -427,7 +427,7 @@ async def test_validate_config_success(jira_connector):
     """测试配置验证成功"""
     with patch("httpx.AsyncClient.get") as mock_get:
         mock_get.return_value = AsyncMock(status_code=200)
-        
+
         result = await jira_connector.validate_config()
         assert result is True
 
@@ -436,7 +436,7 @@ async def test_validate_config_failure(jira_connector):
     """测试配置验证失败"""
     with patch("httpx.AsyncClient.get") as mock_get:
         mock_get.side_effect = httpx.RequestError("Connection error")
-        
+
         with pytest.raises(ConnectionError):
             await jira_connector.validate_config()
 
@@ -457,18 +457,18 @@ async def test_fetch_activities(jira_connector):
             }
         ]
     }
-    
+
     with patch("httpx.AsyncClient.get") as mock_get:
         mock_get.return_value = AsyncMock(
             status_code=200,
             json=lambda: mock_response
         )
-        
+
         start = datetime(2023, 10, 1)
         end = datetime(2023, 10, 31)
-        
+
         activities = await jira_connector.fetch_activities(start, end)
-        
+
         assert len(activities) == 1
         assert activities[0].source_id == "TEST-1"
         assert activities[0].title == "Test Issue"
@@ -488,18 +488,18 @@ async def test_jira_real_connection():
         api_token=os.getenv("JIRA_TEST_TOKEN"),
         project_key="TEST",
     )
-    
+
     connector = JiraConnector(config)
-    
+
     # 验证配置
     is_valid = await connector.validate_config()
     assert is_valid
-    
+
     # 抓取数据
     start = datetime.now() - timedelta(days=7)
     end = datetime.now()
     activities = await connector.fetch_activities(start, end)
-    
+
     assert isinstance(activities, list)
 ```
 
@@ -537,7 +537,7 @@ export const JiraConfigForm: FC<JiraConfigProps> = ({ onSubmit, loading }) => {
   const { register, handleSubmit, formState: { errors } } = useForm<JiraConfigForm>({
     resolver: zodResolver(jiraConfigSchema),
   })
-  
+
   return (
     <Card>
       <CardHeader>
@@ -547,19 +547,19 @@ export const JiraConfigForm: FC<JiraConfigProps> = ({ onSubmit, loading }) => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="text-sm font-medium">Jira 地址</label>
-            <Input 
-              {...register('api_url')} 
+            <Input
+              {...register('api_url')}
               placeholder="https://your-domain.atlassian.net"
             />
             {errors.api_url && (
               <span className="text-sm text-destructive">{errors.api_url.message}</span>
             )}
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">API Token</label>
-            <Input 
-              {...register('api_token')} 
+            <Input
+              {...register('api_token')}
               type="password"
               placeholder="your-api-token"
             />
@@ -567,18 +567,18 @@ export const JiraConfigForm: FC<JiraConfigProps> = ({ onSubmit, loading }) => {
               <span className="text-sm text-destructive">{errors.api_token.message}</span>
             )}
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">项目键</label>
-            <Input 
-              {...register('project_key')} 
+            <Input
+              {...register('project_key')}
               placeholder="PROJ"
             />
             {errors.project_key && (
               <span className="text-sm text-destructive">{errors.project_key.message}</span>
             )}
           </div>
-          
+
           <Button type="submit" disabled={loading}>
             {loading ? '验证中...' : '保存配置'}
           </Button>
@@ -616,15 +616,15 @@ async def fetch_activities(self, start_time, end_time):
         # API 调用
         response = await client.get(...)
         response.raise_for_status()
-        
+
     except httpx.HTTPStatusError as e:
         logger.error(f"HTTP 错误: {e.response.status_code}")
         raise ConnectorError(f"API 返回错误: {e.response.text}")
-        
+
     except httpx.RequestError as e:
         logger.error(f"请求错误: {e}")
         raise ConnectionError(f"无法连接到数据源: {e}")
-        
+
     except Exception as e:
         logger.error(f"未知错误: {e}", exc_info=True)
         raise ConnectorError(f"处理数据时出错: {e}")
@@ -659,7 +659,7 @@ async def fetch_activities(self, start_time, end_time):
     all_activities = []
     start_at = 0
     max_results = 100
-    
+
     while True:
         response = await client.get(
             url,
@@ -669,17 +669,17 @@ async def fetch_activities(self, start_time, end_time):
             }
         )
         data = response.json()
-        
+
         # 转换数据
         activities = self._convert_to_activities(data["items"])
         all_activities.extend(activities)
-        
+
         # 检查是否还有更多数据
         if len(data["items"]) < max_results:
             break
-        
+
         start_at += max_results
-    
+
     return all_activities
 ```
 
@@ -709,10 +709,10 @@ async def _fetch_with_retry(self, url, params):
 ```python
 def _convert_to_activity(self, raw_item: dict) -> ActivityCreate:
     """将原始数据转换为 Activity
-    
+
     Args:
         raw_item: 数据源返回的原始数据
-        
+
     Returns:
         ActivityCreate 对象
     """
@@ -810,10 +810,10 @@ A: 使用分页和增量同步：
 async def fetch_activities(self, start_time, end_time):
     # 1. 分页抓取
     activities = await self._fetch_paginated(start_time, end_time)
-    
+
     # 2. 只返回新数据（基于 fingerprint）
     # 由服务层处理去重
-    
+
     return activities
 ```
 
@@ -831,9 +831,9 @@ async def fetch_activities(self, start_time, end_time):
         self._fetch_comments(),
         self._fetch_attachments(),
     ]
-    
+
     results = await asyncio.gather(*tasks)
-    
+
     # 合并结果
     activities = self._merge_results(results)
     return activities

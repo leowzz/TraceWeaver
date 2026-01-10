@@ -28,7 +28,10 @@ def read_llm_prompts(
     """Retrieve LLM Prompts."""
     prompts = llm_prompt_crud.get_multi(session=session, skip=skip, limit=limit)
     count = llm_prompt_crud.count(session=session)
-    return LLMPromptsPublic(data=[LLMPromptPublic.model_validate(p,from_attributes=True) for p in prompts], count=count)
+    return LLMPromptsPublic(
+        data=[LLMPromptPublic.model_validate(p, from_attributes=True) for p in prompts],
+        count=count,
+    )
 
 
 @router.get("/{id}", response_model=LLMPromptPublic)

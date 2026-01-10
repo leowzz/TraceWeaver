@@ -15,11 +15,10 @@ class GitConfig(SQLModel):
     branch: str = Field(default="main", description="Branch to track")
 
 
-class DayflowConfig(SQLModel):
-    """Dayflow API configuration."""
+class DayflowLocalConfig(SQLModel):
+    """Dayflow 本地数据库配置."""
 
-    api_url: HttpUrl = Field(..., description="Dayflow API URL")
-    api_token: str = Field(..., description="API authentication token")
+    db_path: str = Field(..., description="Dayflow SQLite 数据库路径")
 
 
 class SiYuanConfig(SQLModel):
@@ -68,6 +67,7 @@ class SourceConfigPublic(SQLModel):
     type: SourceType = Field(..., description="Data source type")
     name: str = Field(..., description="User-defined name for this configuration")
     is_active: bool = Field(default=True, description="Whether this config is active")
+    config_payload: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -77,3 +77,18 @@ class SourceConfigsPublic(SQLModel):
 
     data: list[SourceConfigPublic]
     count: int
+
+
+class SyncRequest(SQLModel):
+    """Schema for sync request."""
+
+    start_date: datetime = Field(..., description="同步开始时间")
+
+
+class SyncResponse(SQLModel):
+    """Schema for sync response."""
+
+    total_fetched: int = Field(..., description="获取的活动总数")
+    new_count: int = Field(..., description="新增活动数")
+    updated_count: int = Field(..., description="更新活动数")
+    embedded_count: int = Field(..., description="向量化活动数")

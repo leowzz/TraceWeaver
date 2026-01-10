@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Pencil } from "lucide-react"
+import { Pencil, TestTube } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -41,7 +41,9 @@ const formSchema = z.object({
   // Git config
   repo_path: z.string().optional(),
   branch: z.string().optional(),
-  // Dayflow/SiYuan config
+  // Dayflow config
+  db_path: z.string().optional(),
+  // SiYuan config
   api_url: z.string().url().optional().or(z.literal("")),
   api_token: z.string().optional(),
 })
@@ -66,6 +68,16 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
         ...base,
         repo_path: dataSource.config_payload?.repo_path || "",
         branch: dataSource.config_payload?.branch || "main",
+        db_path: "",
+        api_url: "",
+        api_token: "",
+      }
+    } else if (dataSource.type === "DAYFLOW") {
+      return {
+        ...base,
+        repo_path: "",
+        branch: "",
+        db_path: dataSource.config_payload?.db_path || "",
         api_url: "",
         api_token: "",
       }
@@ -74,6 +86,7 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
       ...base,
       repo_path: "",
       branch: "",
+      db_path: "",
       api_url: dataSource.config_payload?.api_url || "",
       api_token: dataSource.config_payload?.api_token || "",
     }
@@ -97,10 +110,56 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
       setIsOpen(false)
       onSuccess()
     },
-    onError: (error) => handleError(error, showErrorToast),
+    onError: (error) => handleError.call(showErrorToast, error as any),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["source-configs"] })
     },
+  })
+
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      // Validate form first
+      const isValid = await form.trigger()
+      if (!isValid) {
+        throw new Error("请先填写所有必填字段")
+      }
+
+      // Get form data
+      const formData = form.getValues()
+      let config_payload = {}
+      if (dataSource.type === "GIT") {
+        config_payload = {
+          repo_path: formData.repo_path,
+          branch: formData.branch || "main",
+        }
+      } else if (dataSource.type === "DAYFLOW") {
+        config_payload = {
+          db_path: formData.db_path,
+        }
+      } else if (dataSource.type === "SIYUAN") {
+        config_payload = {
+          api_url: formData.api_url,
+          api_token: formData.api_token,
+        }
+      }
+
+      // Save temporarily
+      await SourceConfigsService.updateSourceConfig({
+        id: dataSource.id,
+        requestBody: {
+          config_payload,
+        },
+      })
+
+      // Then test the connection
+      return SourceConfigsService.testSourceConfigConnection({
+        id: dataSource.id,
+      })
+    },
+    onSuccess: (data) => {
+      showSuccessToast(data.message || "连接测试成功")
+    },
+    onError: (error) => handleError.call(showErrorToast, error as any),
   })
 
   const onSubmit = (data: FormData) => {
@@ -111,7 +170,11 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
         repo_path: data.repo_path,
         branch: data.branch || "main",
       }
-    } else if (dataSource.type === "DAYFLOW" || dataSource.type === "SIYUAN") {
+    } else if (dataSource.type === "DAYFLOW") {
+      config_payload = {
+        db_path: data.db_path,
+      }
+    } else if (dataSource.type === "SIYUAN") {
       config_payload = {
         api_url: data.api_url,
         api_token: data.api_token,
@@ -214,67 +277,102 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
                 </>
               )}
 
-              {(dataSource.type === "DAYFLOW" ||
-                dataSource.type === "SIYUAN") && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="api_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            API URL <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={
-                                dataSource.type === "SIYUAN"
-                                  ? "http://localhost:6806"
-                                  : "https://api.dayflow.com"
-                              }
-                              type="url"
-                              {...field}
-                              required
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              {dataSource.type === "DAYFLOW" && (
+                <FormField
+                  control={form.control}
+                  name="db_path"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Database Path{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="/Users/leo/Library/Application Support/Dayflow/chunks.sqlite"
+                          type="text"
+                          {...field}
+                          required
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Absolute path to the Dayflow SQLite database file
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-                    <FormField
-                      control={form.control}
-                      name="api_token"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            API Token <span className="text-destructive">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter API token"
-                              type="password"
-                              {...field}
-                              required
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+              {dataSource.type === "SIYUAN" && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="api_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          API URL <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="http://localhost:6806"
+                            type="url"
+                            {...field}
+                            required
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="api_token"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          API Token <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter API token"
+                            type="password"
+                            {...field}
+                            required
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
 
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" disabled={mutation.isPending}>
-                  Cancel
-                </Button>
-              </DialogClose>
-              <LoadingButton type="submit" loading={mutation.isPending}>
-                Save
+            <DialogFooter className="flex items-center justify-between sm:flex-row">
+              <LoadingButton
+                type="button"
+                variant="outline"
+                onClick={() => testConnectionMutation.mutate()}
+                loading={testConnectionMutation.isPending}
+                disabled={mutation.isPending}
+                className="sm:mr-auto"
+              >
+                <TestTube className="mr-2 h-4 w-4" />
+                测试连接
               </LoadingButton>
+              <div className="flex gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={mutation.isPending}>
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <LoadingButton type="submit" loading={mutation.isPending}>
+                  Save
+                </LoadingButton>
+              </div>
             </DialogFooter>
           </form>
         </Form>

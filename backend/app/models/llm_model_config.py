@@ -10,7 +10,7 @@ from sqlmodel import Field, SQLModel
 from app.models.enums import LLMProvider
 
 if TYPE_CHECKING:
-    from app.models.image_analysis import ImageAnalysis
+    pass
 
 
 class LLMModelConfig(SQLModel, table=True):
@@ -26,17 +26,30 @@ class LLMModelConfig(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
     # Core fields
-    name: str = Field(index=True, description="Configuration name (e.g., 'GPT-4 Vision', 'Claude 3')")
+    name: str = Field(
+        index=True, description="Configuration name (e.g., 'GPT-4 Vision', 'Claude 3')"
+    )
     provider: LLMProvider = Field(index=True, description="Model provider type")
-    model_id: str = Field(index=True, description="Model ID/name (e.g., 'gpt-4-vision-preview', 'claude-3-opus')")
+    model_id: str = Field(
+        index=True,
+        description="Model ID/name (e.g., 'gpt-4-vision-preview', 'claude-3-opus')",
+    )
     base_url: str = Field(description="API base_url URL")
-    api_key: str | None = Field(default=None, description="API key (optional, may be stored elsewhere)")
+    api_key: str | None = Field(
+        default=None, description="API key (optional, may be stored elsewhere)"
+    )
 
     # Additional configuration stored as JSON
-    config: dict | None = Field(default_factory=dict, sa_column=Column(JSONB), description="Additional provider-specific configuration")
+    config: dict | None = Field(
+        default_factory=dict,
+        sa_column=Column(JSONB),
+        description="Additional provider-specific configuration",
+    )
 
     # Status
-    is_active: bool = Field(default=True, index=True, description="Whether this config is active")
+    is_active: bool = Field(
+        default=True, index=True, description="Whether this config is active"
+    )
 
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.now)

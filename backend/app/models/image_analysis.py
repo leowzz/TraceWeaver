@@ -3,11 +3,11 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Column, Enum as SQLAEnum
+from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.enums import AnalysisStatus, SourceType, ImageSourceType
+from app.models.enums import AnalysisStatus, ImageSourceType
 
 if TYPE_CHECKING:
     from app.models.llm_prompt import LLMPrompt
@@ -26,13 +26,9 @@ class ImageAnalysis(SQLModel, table=True):
 
     # Core fields
     img_path: str = Field(index=True, description="Image path from source")
-    source_type: ImageSourceType = Field(
-        index=True, description="Source type"
-    )
+    source_type: ImageSourceType = Field(index=True, description="Source type")
     # Virtual foreign key (no DB constraint)
-    llm_prompt_id: int = Field(
-        index=True, description="LLM prompt template ID"
-    )
+    llm_prompt_id: int = Field(index=True, description="LLM prompt template ID")
     analysis_result: str | None = Field(
         default=None, description="Analysis result text"
     )

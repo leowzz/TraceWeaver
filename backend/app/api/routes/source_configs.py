@@ -3,22 +3,23 @@
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from loguru import logger
 
 from app.api.deps import CurrentUser, SessionDep
 from app.connectors.registry import registry
 from app.core.context import ctx
 from app.crud.source_config import source_config_crud
 from app.models import Message
-from app.models.enums import SourceType
-from app.models.source_config import SourceConfig
 from app.schemas.source_config import (
     SourceConfigCreate,
     SourceConfigPublic,
     SourceConfigsPublic,
     SourceConfigUpdate,
+    SyncRequest,
+    SyncResponse,
 )
-from loguru import logger
+from app.services.sync_service import SyncService
+
 router = APIRouter(prefix="/source-configs", tags=["source-configs"])
 
 
@@ -36,20 +37,18 @@ def read_source_configs(
 
 
 @router.get("/{id}", response_model=SourceConfigPublic)
-def read_source_config(
-    session: SessionDep, current_user: CurrentUser, id: int
-) -> Any:
+def read_source_config(session: SessionDep, current_user: CurrentUser, id: int) -> Any:
     """
     Get source configuration by ID.
     """
     config = source_config_crud.get(session=session, id=id)
     if not config:
         raise HTTPException(status_code=404, detail="Source configuration not found")
-    
+
     # Ensure user can only access their own configs
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
+
     return config
 
 
@@ -65,7 +64,7 @@ def create_source_config(
         raise HTTPException(
             status_code=403, detail="Cannot create configuration for another user"
         )
-    
+
     config = source_config_crud.create(session=session, obj_in=config_in)
     return config
 
@@ -84,11 +83,11 @@ def update_source_config(
     config = source_config_crud.get(session=session, id=id)
     if not config:
         raise HTTPException(status_code=404, detail="Source configuration not found")
-    
+
     # Ensure user can only update their own configs
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
+
     config = source_config_crud.update(session=session, id=id, obj_in=config_in)
     return config
 
@@ -103,11 +102,11 @@ def delete_source_config(
     config = source_config_crud.get(session=session, id=id)
     if not config:
         raise HTTPException(status_code=404, detail="Source configuration not found")
-    
+
     # Ensure user can only delete their own configs
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
+
     source_config_crud.delete(session=session, id=id)
     return Message(message="Source configuration deleted successfully")
 
@@ -123,11 +122,11 @@ async def test_source_config_connection(
     config = source_config_crud.get(session=session, id=id)
     if not config:
         raise HTTPException(status_code=404, detail="Source configuration not found")
-    
+
     # Ensure user can only test their own configs
     if config.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
+
     try:
         connector = registry.get(config)
     except ValueError as e:
@@ -135,10 +134,10 @@ async def test_source_config_connection(
             status_code=500,
             detail=str(e),
         )
-    
+
     try:
         # Test the connection (assuming connectors have a test_connection method)
-        
+
         # Test the connection (assuming connectors have a test_connection method)
         # If they don't have this method, we'll need to add it
         if hasattr(connector, "test_connection"):
@@ -151,4 +150,49 @@ async def test_source_config_connection(
         raise HTTPException(
             status_code=400,
             detail=f"Connection test failed: {str(e)}",
+        )
+
+
+@router.post("/{id}/sync", response_model=SyncResponse)
+async def sync_source_config(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: int,
+    sync_request: SyncRequest,
+) -> Any:
+    """
+    Sync activities from a source configuration.
+
+    Fetches activities from the configured data source starting from the specified date,
+    upserts them to the database, and embeds them into vectors.
+    """
+    config = source_config_crud.get(session=session, id=id)
+    if not config:
+        raise HTTPException(status_code=404, detail="Source configuration not found")
+
+    # Ensure user can only sync their own configs
+    if config.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    # Check if config is active
+    if not config.is_active:
+        raise HTTPException(
+            status_code=400, detail="Cannot sync inactive source configuration"
+        )
+
+    try:
+        sync_service = SyncService()
+        result = await sync_service.sync_source_config(
+            source_config=config,
+            user_id=current_user.id,
+            session=session,
+            start_date=sync_request.start_date,
+        )
+        return SyncResponse(**result)
+    except Exception as e:
+        logger.exception(f"Sync failed for source config {id}: {e=}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sync failed: {str(e)}",
         )

@@ -1,23 +1,23 @@
 """Celery tasks for TraceWeaver."""
 
-from app.crud.image_analysis import image_analysis_crud
 import asyncio
 from pathlib import Path
 
 from celery.utils.log import get_task_logger
 from sqlmodel import Session, select
 
-from app.core.config import settings
+from app.clients.llm.client import LLMClient, LLMClientError
+from app.connectors import registry
 from app.core.celery_app import celery_app
+from app.core.config import settings
 from app.core.db import engine
+from app.crud.image_analysis import image_analysis_crud
 from app.crud.llm_model_config import llm_model_config_crud
 from app.crud.llm_prompt import llm_prompt_crud
 from app.models.enums import AnalysisStatus, ImageSourceType, SourceType
 from app.models.image_analysis import ImageAnalysis
 from app.models.source_config import SourceConfig
 from app.schemas.llm import ImageAnalysisTaskData
-from app.clients.llm.client import LLMClient, LLMClientError
-from app.connectors import registry
 
 logger = get_task_logger(__name__)
 
@@ -60,7 +60,10 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
     # Create database record
     with Session(engine) as session:
         if exist_completed := image_analysis_crud.get_by_img_path_status_prompt_id(
-                session, img_path=img_path, status=AnalysisStatus.COMPLETED, llm_prompt_id=llm_prompt_id
+            session,
+            img_path=img_path,
+            status=AnalysisStatus.COMPLETED,
+            llm_prompt_id=llm_prompt_id,
         ):
             logger.info(f"{img_path=}. exist: {[i.id for i in exist_completed]}")
             return {"analysis_id": exist_completed[0].id, "status": "completed"}
@@ -72,7 +75,7 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
             llm_prompt_id=llm_prompt_id,
             model_name=model_name,
             status=AnalysisStatus.PENDING,
-            extra_data=extra_data
+            extra_data=extra_data,
         )
         session.add(analysis_record)
         session.commit()
@@ -132,7 +135,7 @@ async def _process_image_analysis_async(task_data: dict) -> dict:
 
 
 async def _get_image_bytes(
-        session: Session, source_type: ImageSourceType, img_path: str
+    session: Session, source_type: ImageSourceType, img_path: str
 ) -> bytes:
     """Get image bytes from the source system."""
     if source_type != ImageSourceType.SIYUAN_LOCAL:
@@ -166,7 +169,7 @@ async def _get_image_bytes(
 
 
 async def _analyze_image_with_llm_client(
-        image_bytes: bytes, prompt_content: str, model_config
+    image_bytes: bytes, prompt_content: str, model_config
 ) -> str:
     """Analyze image using LLM client."""
     client = None

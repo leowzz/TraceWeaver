@@ -1,0 +1,97 @@
+# Docker Compose 开发环境配置
+#
+# 数据源配置说明：
+# 当后端在容器中运行时，要访问宿主机上的服务（如思源笔记、Git 仓库等），
+# 需要使用以下 hostname：
+#
+# - 思源笔记 API: http://host.docker.internal:6806
+# - 其他宿主机服务: http://host.docker.internal:<端口>
+#
+# 注意：Git 仓库路径需要使用容器内可访问的路径，或通过 volume 挂载
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8010:8000"
+    command:
+      - fastapi
+      - run
+      - --reload
+      - app/main.py
+    volumes:
+      # 只挂载配置文件，代码文件通过 watch 同步
+      - ./backend/config.yaml:/app/config.yaml:ro
+      - "/Users/leo/Library/Application Support/Dayflow:/mnt/Dayflow:ro"
+    environment:
+      # 确保使用外部数据库（已在 config.yaml 配置）
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      # 允许容器访问宿主机服务
+      # macOS/Windows Docker Desktop 自动支持，但显式配置更安全
+      - "host.docker.internal:host-gateway"
+    develop:
+      watch:
+        - path: ./backend/app
+          action: sync
+          target: /app/app
+          ignore:
+            - ./backend/app/__pycache__
+            - ./backend/app/**/__pycache__
+        - path: ./backend/tests
+          action: sync
+          target: /app/tests
+        - path: ./backend/pyproject.toml
+          action: rebuild
+        - path: ./backend/uv.lock
+          action: rebuild
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      args:
+        - VITE_API_URL=http://localhost:8010
+        - NODE_ENV=development
+    ports:
+      - "5173:5173"
+    volumes:
+      # 只挂载 node_modules 防止被覆盖，源代码通过 watch 同步
+      - /app/node_modules
+    environment:
+      # 前端在浏览器中运行，所以使用 localhost（映射到宿主机的端口）
+      - VITE_API_URL=http://localhost:8010
+      - NODE_ENV=development
+    develop:
+      watch:
+        - path: ./frontend/src
+          action: sync
+          target: /app/src
+        - path: ./frontend/public
+          action: sync
+          target: /app/public
+        - path: ./frontend/index.html
+          action: sync
+          target: /app/index.html
+        - path: ./frontend/vite.config.ts
+          action: sync
+          target: /app/vite.config.ts
+        - path: ./frontend/tsconfig.json
+          action: sync
+          target: /app/tsconfig.json
+        - path: ./frontend/tsconfig.build.json
+          action: sync
+          target: /app/tsconfig.build.json
+        - path: ./frontend/components.json
+          action: sync
+          target: /app/components.json
+        - path: ./frontend/biome.json
+          action: sync
+          target: /app/biome.json
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/package-lock.json
+          action: rebuild
+        - path: ./frontend/pnpm-lock.yaml
+          action: rebuild

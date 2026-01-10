@@ -17,4 +17,3 @@ class LLMChatResponse(BaseModel):
     """Response from LLM chat API."""
 
     content: str = Field(..., description="Response content/text")
-

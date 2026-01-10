@@ -93,13 +93,13 @@ op.create_unique_constraint('uq_activity_fingerprint', 'activity', ['fingerprint
 def upgrade():
     # 1. 先添加列（允许 NULL）
     op.add_column('activity', sa.Column('new_field', sa.String(), nullable=True))
-    
+
     # 2. 填充数据
     connection = op.get_bind()
     connection.execute(
         text("UPDATE activity SET new_field = 'default_value' WHERE new_field IS NULL")
     )
-    
+
     # 3. 设置为 NOT NULL（如果需要）
     op.alter_column('activity', 'new_field', nullable=False)
 
@@ -124,7 +124,7 @@ def upgrade():
         sa.Column('embedder_model', sa.String(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False),
     )
-    
+
     # 添加向量索引
     op.create_index(
         'idx_embedding_vector',
@@ -145,19 +145,19 @@ def downgrade():
 ```python
 def upgrade():
     op.add_column('activity', sa.Column('fingerprint', sa.String(), nullable=True))
-    
+
     # 填充已有数据的 fingerprint
     connection = op.get_bind()
     connection.execute(
         text("""
-            UPDATE activity 
+            UPDATE activity
             SET fingerprint = md5(
                 source_type || ':' || source_id || ':' || occurred_at::text
             )
             WHERE fingerprint IS NULL
         """)
     )
-    
+
     # 设置为 NOT NULL 和 UNIQUE
     op.alter_column('activity', 'fingerprint', nullable=False)
     op.create_unique_constraint('uq_activity_fingerprint', 'activity', ['fingerprint'])
@@ -258,7 +258,7 @@ class ActivityEmbedding(SQLModel, table=True):
     embedding: List[float] = Field(
         sa_column=Column(Vector(1536))  # 指定维度
     )
-    
+
     __table_args__ = (
         # HNSW 向量索引
         Index(
@@ -308,11 +308,11 @@ class Activity(SQLModel, table=True):
     user_id: str
     occurred_at: datetime
     source_type: str
-    
+
     __table_args__ = (
         # 复合索引：用户 + 时间（最常用的查询组合）
         Index("idx_user_occurred", "user_id", "occurred_at"),
-        
+
         # 覆盖索引：包含查询常用的列
         Index("idx_user_source_time", "user_id", "source_type", "occurred_at"),
     )
@@ -357,7 +357,7 @@ created_at: datetime = Field(default_factory=datetime.utcnow)  # 已弃用
    ```bash
    # 应用迁移
    alembic upgrade head
-   
+
    # 测试回滚
    alembic downgrade -1
    alembic upgrade head
@@ -367,7 +367,7 @@ created_at: datetime = Field(default_factory=datetime.utcnow)  # 已弃用
    ```bash
    # 在维护窗口执行
    alembic upgrade head
-   
+
    # 验证数据
    psql -d dbname -c "SELECT * FROM activity LIMIT 10;"
    ```
@@ -382,21 +382,21 @@ created_at: datetime = Field(default_factory=datetime.utcnow)  # 已弃用
 def upgrade():
     # 1. 添加列（允许 NULL）
     op.add_column('activity', sa.Column('new_field', sa.String(), nullable=True))
-    
+
     # 2. 分批填充数据（避免长时间锁表）
     connection = op.get_bind()
     batch_size = 10000
     offset = 0
-    
+
     while True:
         result = connection.execute(
             text(f"""
-                UPDATE activity 
+                UPDATE activity
                 SET new_field = 'computed_value'
                 WHERE id IN (
-                    SELECT id FROM activity 
-                    WHERE new_field IS NULL 
-                    ORDER BY id 
+                    SELECT id FROM activity
+                    WHERE new_field IS NULL
+                    ORDER BY id
                     LIMIT {batch_size}
                 )
             """)
@@ -404,7 +404,7 @@ def upgrade():
         if result.rowcount == 0:
             break
         offset += batch_size
-    
+
     # 3. 设置为 NOT NULL
     op.alter_column('activity', 'new_field', nullable=False)
 ```
@@ -438,14 +438,14 @@ from alembic import context
 
 def run_migrations_online():
     # ... 配置代码 ...
-    
+
     with context.begin_transaction():
         context.run_migrations()
-    
+
     # CONCURRENTLY 索引需要在事务外
     if context.is_offline_mode():
         return
-    
+
     connection = context.get_bind()
     connection.execute(
         text("CREATE INDEX CONCURRENTLY IF NOT EXISTS ...")
@@ -460,13 +460,13 @@ def run_migrations_online():
 def upgrade():
     # 执行迁移
     op.add_column(...)
-    
+
     # 验证数据
     connection = op.get_bind()
     result = connection.execute(
         text("SELECT COUNT(*) FROM activity WHERE new_field IS NULL")
     ).scalar()
-    
+
     if result > 0:
         raise Exception(f"Found {result} rows with NULL new_field after migration")
 ```
@@ -498,17 +498,17 @@ A: PostgreSQL 的 ENUM 类型不支持直接修改，需要重建：
 def upgrade():
     # 1. 创建新的枚举类型
     op.execute("CREATE TYPE source_type_new AS ENUM ('git', 'dayflow', 'siyuan', 'new_type')")
-    
+
     # 2. 修改列类型
     op.execute("""
-        ALTER TABLE activity 
-        ALTER COLUMN source_type TYPE source_type_new 
+        ALTER TABLE activity
+        ALTER COLUMN source_type TYPE source_type_new
         USING source_type::text::source_type_new
     """)
-    
+
     # 3. 删除旧类型
     op.execute("DROP TYPE source_type")
-    
+
     # 4. 重命名新类型
     op.execute("ALTER TYPE source_type_new RENAME TO source_type")
 ```

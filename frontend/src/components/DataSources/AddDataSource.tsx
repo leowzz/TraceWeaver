@@ -41,13 +41,13 @@ import { handleError } from "@/utils"
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
-  type: z.enum(["GIT", "DAYFLOW", "SIYUAN"], {
-    required_error: "Type is required",
-  }),
+  type: z.enum(["GIT", "DAYFLOW", "SIYUAN"]),
   // Git config
   repo_path: z.string().optional(),
   branch: z.string().optional(),
-  // Dayflow/SiYuan config
+  // Dayflow config
+  db_path: z.string().optional(),
+  // SiYuan config
   api_url: z.string().url().optional().or(z.literal("")),
   api_token: z.string().optional(),
 })
@@ -69,6 +69,7 @@ const AddDataSource = () => {
       type: "GIT",
       repo_path: "",
       branch: "main",
+      db_path: "/Users/leo/Library/Application Support/Dayflow/chunks.sqlite",
       api_url: "",
       api_token: "",
     },
@@ -84,7 +85,7 @@ const AddDataSource = () => {
       form.reset()
       setIsOpen(false)
     },
-    onError: (error) => handleError(error, showErrorToast),
+    onError: (error) => handleError.call(showErrorToast, error as any),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["source-configs"] })
     },
@@ -98,7 +99,11 @@ const AddDataSource = () => {
         repo_path: data.repo_path,
         branch: data.branch || "main",
       }
-    } else if (data.type === "DAYFLOW" || data.type === "SIYUAN") {
+    } else if (data.type === "DAYFLOW") {
+      config_payload = {
+        db_path: data.db_path,
+      }
+    } else if (data.type === "SIYUAN") {
       config_payload = {
         api_url: data.api_url,
         api_token: data.api_token,
@@ -226,7 +231,34 @@ const AddDataSource = () => {
                 </>
               )}
 
-              {(selectedType === "DAYFLOW" || selectedType === "SIYUAN") && (
+              {selectedType === "DAYFLOW" && (
+                <FormField
+                  control={form.control}
+                  name="db_path"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Database Path{" "}
+                        <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="/Users/leo/Library/Application Support/Dayflow/chunks.sqlite"
+                          type="text"
+                          {...field}
+                          required
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Absolute path to the Dayflow SQLite database file
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {selectedType === "SIYUAN" && (
                 <>
                   <FormField
                     control={form.control}
@@ -238,11 +270,7 @@ const AddDataSource = () => {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={
-                              selectedType === "SIYUAN"
-                                ? "http://localhost:6806"
-                                : "https://api.dayflow.com"
-                            }
+                            placeholder="http://localhost:6806"
                             type="url"
                             {...field}
                             required

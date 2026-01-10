@@ -61,27 +61,52 @@ strict = true
 exclude = ["venv", ".venv", "alembic"]
 
 [tool.ruff]
+# 和 black 统一，避免格式冲突
+line-length = 88
 target-version = "py310"
 exclude = ["alembic"]
 
+# 允许 ruff 自动修复
+fix = true
+
 [tool.ruff.lint]
+# 默认开启的规则集（推荐）
 select = [
-    "E", # pycodestyle errors
-    "W", # pycodestyle warnings
-    "F", # pyflakes
-    "I", # isort
-    "B", # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-    "ARG001", # unused arguments in functions
-    "T201", # print statements are not allowed
+    "E",    # pycodestyle errors
+    "F",    # pyflakes（F811 在这里）
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "ARG",  # unused arguments
 ]
+
+# 全局忽略的规则
 ignore = [
-    "E501", # line too long, handled by black
-    "B008", # do not perform function calls in argument defaults
-    "W191", # indentation contains tabs
-    "B904", # Allow raising exceptions without from e, for HTTPException
+    "ARG001",  # 未使用的函数参数（FastAPI 依赖注入常见）
+    "ARG002",  # 未使用的方法参数（protocol/interface 实现中常见）
+    "E712",    # == True / == False
+    "E501",    # line too long, handled by black
+    "F821",    # forward reference 在类型注解中合法
 ]
+
+# 明确声明：哪些规则"可以被修复"
+fixable = [
+    "F811",  # 变量 / 函数重复定义（自动移除重复）
+    "F401",  # 未使用的导入（自动移除）
+    "I",     # import 排序
+    "E",     # 部分 pycodestyle
+]
+
+# 哪些规则即使 fix=true 也不要自动修
+unfixable = []
+
+# FastAPI / 依赖注入场景下非常重要
+[tool.ruff.lint.flake8-unused-arguments]
+ignore-variadic-names = true
+
+# 针对特定文件的忽略规则
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]  # __init__.py 中允许未使用的导入和 * 导入
+"tests/**/*.py" = ["F811", "F841", "ARG"]  # 测试文件中允许重复定义、未使用变量和未使用参数
 
 [tool.ruff.lint.pyupgrade]
 # Preserve types, even if a file imports `from __future__ import annotations`.

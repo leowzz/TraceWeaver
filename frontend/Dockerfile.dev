@@ -1,0 +1,28 @@
+# 前端开发环境 Dockerfile
+# 使用 Vite 开发服务器，支持热重载
+# 注意：源代码通过 docker compose watch 同步更新
+
+FROM node:24
+
+WORKDIR /app
+
+# 复制依赖文件
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# 安装依赖（优先使用 pnpm，如果没有则使用 npm）
+RUN if [ -f pnpm-lock.yaml ]; then \
+      npm install -g pnpm && pnpm install; \
+    else \
+      npm install; \
+    fi
+
+# 复制所有项目文件（作为初始状态，watch 会同步更新）
+COPY . .
+
+# 暴露 Vite 开发服务器端口
+EXPOSE 5173
+
+# 启动 Vite 开发服务器
+# 注意：vite.config.ts 中已配置 host 和 port
+CMD ["npm", "run", "dev"]

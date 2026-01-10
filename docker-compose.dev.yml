@@ -1,3 +1,14 @@
+# Docker Compose 开发环境配置
+#
+# 数据源配置说明：
+# 当后端在容器中运行时，要访问宿主机上的服务（如思源笔记、Git 仓库等），
+# 需要使用以下 hostname：
+#
+# - 思源笔记 API: http://host.docker.internal:6806
+# - 其他宿主机服务: http://host.docker.internal:<端口>
+#
+# 注意：Git 仓库路径需要使用容器内可访问的路径，或通过 volume 挂载
+
 services:
   backend:
     build:
@@ -15,6 +26,10 @@ services:
     environment:
       # 确保使用外部数据库（已在 config.yaml 配置）
       - PYTHONUNBUFFERED=1
+    extra_hosts:
+      # 允许容器访问宿主机服务
+      # macOS/Windows Docker Desktop 自动支持，但显式配置更安全
+      - "host.docker.internal:host-gateway"
     develop:
       watch:
         - path: ./backend/app

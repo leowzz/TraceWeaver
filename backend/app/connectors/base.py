@@ -7,7 +7,7 @@ that all adapters (concrete connectors) must implement.
 import hashlib
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from app.schemas.activity import ActivityCreate
 
@@ -53,7 +53,7 @@ class BaseConnector(ABC):
     async def fetch_activities(
         self,
         start_time: datetime,
-        end_time: datetime,
+        end_time: Optional[datetime] = datetime.now(),
     ) -> list[ActivityCreate]:
         """Fetch activities from the data source within the time range.
             start_time: Start of time range

@@ -152,19 +152,27 @@ graph LR
 
 ### 统一活动模型 (Unified Activity Model)
 
-所有数据源的数据都被转换为统一的活动事件格式，存储在 `activities` 表中：
+所有数据源的数据都被转换为统一的活动事件格式，存储在 `activity` 表中（字段设计如下）：
 
-| 字段名 | 类型 | 说明 | 示例 |
-|--------|------|------|------|
-| `id` | UUID | 主键 | - |
-| `user_id` | UUID | 用户ID | - |
-| `source_type` | String | 数据源类型 | "git", "dayflow", "siyuan" |
-| `source_id` | String | 来源方的唯一ID | Git Hash 或 UUID |
-| `occurred_at` | DateTime | 发生时间 | 2023-10-27 14:30:00 |
-| `title` | String | 简短描述 | "fix: payment logic" |
-| `content` | Text | 详细内容/上下文 | Commit Diff, 笔记正文 |
-| `metadata` | JSONB | 源特有数据 | `{"repo": "backend", "branch": "main"}` |
-| `fingerprint` | String | 哈希指纹 | 用于防止重复导入 |
+| 字段名            | 类型        | 说明                     | 示例                                |
+|-------------------|------------|--------------------------|-------------------------------------|
+| `id`              | int        | 主键，自增               | -                                   |
+| `user_id`         | uuid       | 用户ID                   | -                                   |
+| `source_config_id`| int        | 数据源配置ID（可选）      | 12                                  |
+| `source_type`     | sourcetype | 数据源类型（枚举类型）    | "git", "dayflow", "siyuan"          |
+| `title`           | varchar    | 简短描述（必填）           | "fix: payment logic"                |
+| `content`         | varchar    | 详细内容/上下文（可为空）  | "Commit Diff, 笔记正文"             |
+| `extra_data`      | jsonb      | 源特有数据                | `{"repo": "backend", "branch": "main"}` |
+| `fingerprint`     | varchar    | 哈希指纹，用于防重复（必填）| "123acbxyz..."                      |
+| `created_at`      | timestamp  | 创建时间（必填）          | 2024-03-01 12:30:00                 |
+| `updated_at`      | timestamp  | 更新时间（必填）          | 2024-03-02 14:15:00                 |
+
+> 注释：
+> - `id` 主键自增，对应 `nextval('activity_id_seq'::regclass)`。
+> - `source_type` 为自定义枚举类型 `sourcetype`。
+> - `source_config_id` 可为空，用于标识绑定的数据源配置。
+> - `extra_data` 用于灵活扩展各源特有字段。
+> - `fingerprint` 建议唯一，用于去重。
 
 ### 适配器模式 (Adapter Pattern)
 

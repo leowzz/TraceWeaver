@@ -31,7 +31,7 @@ export const DataSourceActionsMenu = ({
     onSuccess: (data) => {
       showSuccessToast(data.message || "Connection test successful")
     },
-    onError: (error) => handleError(error, showErrorToast),
+    onError: (error) => handleError.call(showErrorToast, error),
   })
 
   const handleTestConnection = (e: Event) => {

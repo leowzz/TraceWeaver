@@ -13,12 +13,10 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LoadingButton } from "@/components/ui/loading-button"
-import useAuth from "@/hooks/useAuth"
 import useCustomToast from "@/hooks/useCustomToast"
 import { handleError } from "@/utils"
 
 const DayflowSyncCard = () => {
-  const { user } = useAuth()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const [startDate, setStartDate] = useState<string>(
     () => new Date("2020-08-12").toISOString().split("T")[0]
@@ -50,7 +48,7 @@ const DayflowSyncCard = () => {
         `同步完成！获取 ${data.total_fetched} 条，新增 ${data.new_count} 条，更新 ${data.updated_count} 条，向量化 ${data.embedded_count} 条`
       )
     },
-    onError: (error) => handleError(error, showErrorToast),
+    onError: (error) => handleError.call(showErrorToast, error),
   })
 
   const handleSync = () => {

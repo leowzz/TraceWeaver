@@ -1,397 +1,259 @@
 # TraceWeaver
 
-> 个人数据管理与知识库构建平台 - 让碎片化的工作痕迹成为可检索、可理解的个人知识资产
+> 个人数据痕迹采集与处理平台，当前重点是数据源同步、统一活动模型、向量化和若干管理/调试能力。
 
-## 项目愿景
+## 项目现状
 
-**TraceWeaver** 的目标是管理个人的所有数据，为其构建一个大的知识库。通过自动化收集、标准化和智能分析个人在不同平台（代码、笔记、时间记录等）上的活动，帮助用户：
+`TraceWeaver` 目前还不是一个完整的“个人知识库产品”，更准确地说，它现在是一个已经跑通部分核心底座的工作台：
 
-- 📚 **构建个人知识库**：将碎片化数据统一管理，形成可检索的知识体系
-- 🔍 **语义搜索**：根据意图而非关键词检索历史活动
-- 🤖 **智能问答**：基于个人数据的 AI 助手（RAG 增强）
-- 📊 **自动化报告**：生成工作日报、周报等结构化总结
+- 支持配置和管理多种数据源
+- 支持把外部数据同步为统一的 `Activity`
+- 支持将活动内容切块并写入 `pgvector`
+- 支持管理 LLM 模型配置和 Prompt 模板
+- 支持基于 Prompt 的图片分析任务与结果查看
+- 提供若干管理员调试页面，用于验证 SiYuan SQL 和向量检索链路
 
-## 核心理念
+README 以下内容只描述当前仓库里已经存在的能力；还没实现的能力统一放到文末 `TODO`。
 
-### Trace as a Stream（痕迹即流）
+## 已实现能力
 
-无论数据来自代码提交、时间记录软件还是笔记工具，都应被标准化为统一的"活动事件 (Activity Event)"。这种统一抽象确保：
+### 数据源管理
 
-- 核心业务逻辑与数据源解耦
-- 添加新数据源只需实现适配器接口
-- 所有数据可统一查询、分析和向量化
+当前前后端都已经实现了数据源配置管理：
 
-### Knowledge as Context（知识即上下文）
+- `Git` 数据源
+- `Dayflow` 数据源
+- `SiYuan` 数据源
 
-通过 **RAG（检索增强生成）** 技术，将个人数据转化为 LLM 可用的上下文：
+支持的操作：
 
-```
-数据 → 向量化 → pgvector 存储 → 语义搜索 → LLM 上下文 → 智能输出
-```
+- 创建数据源配置
+- 编辑数据源配置
+- 删除数据源配置
+- 测试连接
+- 手动触发同步
 
-这使得：
-- 可以根据意图而非关键词搜索历史记录
-- LLM 基于个人数据生成更准确的报告
-- 构建真正的"个人 AI 助手"
+说明：
 
-## 核心特性
+- `Dayflow` 当前实际接入的是本地 SQLite 数据库文件，不是 README 旧版本里写的 API/CSV 方案
+- 同步入口已经在后端和前端打通，但首页当前只提供了 `Dayflow` 的便捷同步卡片
 
-- 🔌 **多数据源支持**：通过适配器模式支持 Git、Dayflow、SiYuan 等多种数据源
-- 🎯 **统一数据模型**：所有数据源统一转换为标准化的活动事件
-- 🔍 **语义搜索**：基于向量的语义搜索，根据意图而非关键词查找内容
-- 🧠 **RAG 增强**：检索增强生成，为 LLM 提供个人数据上下文
-- 🤖 **AI 智能总结**：基于 LLM 自动生成工作日报和周报
-- 📊 **可视化时间线**：直观展示一天的活动流
-- ✏️ **可编辑报告**：支持手动修正和优化 AI 生成的内容
-- 🔒 **安全可靠**：JWT 认证、密码加密、数据隔离
-- 🚀 **现代化技术栈**：FastAPI + React + TypeScript + PostgreSQL + pgvector
+### 统一活动模型
+
+不同来源的数据会被标准化为统一的 `Activity` 记录，核心字段包括：
+
+- `user_id`
+- `source_config_id`
+- `source_type`
+- `title`
+- `content`
+- `extra_data`
+- `fingerprint`
+- `created_at`
+- `updated_at`
+
+这个模型是当前仓库里最明确的核心抽象，数据同步、去重和向量化都围绕它展开。
+
+### 同步与向量化
+
+当前同步链路已经具备：
+
+1. 从已配置的数据源抓取活动
+2. 将数据转换为统一 `Activity`
+3. 基于 `fingerprint` 做去重和更新
+4. 将活动文本切块
+5. 生成 embedding
+6. 将向量写入 `activity_embedding` 表
+
+当前 embedding 相关实现特点：
+
+- 向量存储使用 `PostgreSQL + pgvector`
+- 已接入 `Agno`
+- 当前实际可用的 embedder provider 只有 `Ollama`
+
+### LLM 配置与 Prompt 管理
+
+前后端提供了两套管理能力：
+
+- `LLM Models`：管理模型连接配置
+- `LLM Prompts`：管理 Prompt 模板
+
+当前这部分能力主要服务于图片分析功能，而不是通用对话或 RAG 问答。
+
+### 图片分析
+
+仓库当前有一条完整的“图片分析”链路：
+
+- 配置 LLM 模型
+- 配置 Prompt 模板
+- 提交图片分析任务
+- 使用 Celery 异步执行分析
+- 保存分析结果
+- 在前端查看已完成分析结果
+
+目前图片来源主要围绕 `SiYuan` 本地资源。
+
+### 调试能力
+
+当前还有两个明显偏内部/管理员使用的调试入口：
+
+- `Debug SQL`：执行 SiYuan SQL 查询
+- `Debug Vector`：执行向量检索，查看相似度和命中 chunk
+
+这说明“向量检索底座”已经能验证，但它还不是面向普通用户的正式搜索产品。
+
+## 当前页面
+
+前端当前主要页面包括：
+
+- `/`：Dashboard，当前主要展示 `Dayflow` 同步卡片
+- `/datasources`：数据源管理
+- `/llm-models`：LLM 模型配置管理
+- `/llm-prompts`：Prompt 模板管理
+- `/image-analyses`：图片分析结果查看
+- `/admin`：用户管理
+- `/debug-siyuan-sql`：管理员 SQL 调试
+- `/debug-vector-search`：管理员向量检索调试
+- `/settings`：用户设置
+
+如果你期待的是“个人知识库首页 / 搜索框 / AI 问答页 / 报告页”，这些目前都还没有落地。
 
 ## 技术栈
 
 ### 后端
-- **FastAPI** - 高性能 Python Web 框架
-- **SQLModel** - 基于 Pydantic 和 SQLAlchemy 的 ORM（同步模式）
-- **PostgreSQL + pgvector** - 关系型数据库 + 向量存储扩展
-- **Agno** - 可扩展的 Embedder 抽象框架
-- **Alembic** - 数据库迁移工具
-- **Pydantic v2** - 数据验证和设置管理
-- **Loguru** - 日志记录框架
+
+- FastAPI
+- SQLModel
+- PostgreSQL
+- pgvector
+- Alembic
+- Agno
+- Celery
+- Loguru
 
 ### 前端
-- **React 18** - UI 框架
-- **TypeScript** - 类型安全
-- **Vite** - 构建工具
-- **TanStack Router** - 类型安全路由
-- **TanStack Query** - 数据获取和状态管理
-- **Tailwind CSS** - 样式框架
-- **shadcn/ui** - UI 组件库
-- **pnpm** - 包管理工具
+
+- React 18
+- TypeScript
+- Vite
+- TanStack Router
+- TanStack Query
+- Tailwind CSS
+- shadcn/ui
 
 ### 基础设施
-- **Docker Compose** - 容器编排
-- **Traefik** - 反向代理和负载均衡
-- **Playwright** - 端到端测试
+
+- Docker Compose
+- Traefik
+- Playwright
 
 ## 快速开始
 
 ### 前置要求
 
-- [Docker](https://www.docker.com/) 和 Docker Compose
-- [uv](https://docs.astral.sh/uv/) (Python 包管理工具，可选)
+- Docker
+- Docker Compose
+- `uv`，用于本地 Python 开发
+- `pnpm`，用于本地前端开发
 
-### 启动项目
-
-1. **克隆仓库**
-
-```bash
-git clone <repository-url>
-cd TraceWeaver
-```
-
-2. **配置环境变量**
-
-复制 `.env.example` 为 `.env` 并配置必要的环境变量（如果存在）。
-
-3. **启动 Docker Compose 服务**
+### 启动整套服务
 
 ```bash
 docker compose watch
 ```
 
-4. **访问应用**
+启动后可访问：
 
-- 前端界面: http://localhost:5173
-- 后端 API: http://localhost:8000
-- API 文档 (Swagger): http://localhost:8000/docs
-- 数据库管理 (Adminer): http://localhost:8080
+- 前端：<http://localhost:5173>
+- 后端 API：<http://localhost:8000>
+- Swagger：<http://localhost:8000/docs>
+- Adminer：<http://localhost:8080>
+- Traefik UI：<http://localhost:8090>
+- MailCatcher：<http://localhost:1080>
 
-### 本地开发
+更详细的本地开发说明见 [development.md](development.md)。
 
-详细的开发指南请参考 [开发文档](development.md)。
+## 本地开发
 
-## 系统架构
+### 后端
 
-TraceWeaver 采用 **Hexagonal Architecture（六边形架构/端口适配器模式）**，核心业务逻辑与外部系统完全解耦。
-
-```mermaid
-graph LR
-    subgraph Input["数据源"]
-        Git["Git 仓库"]
-        SiYuan["思源笔记"]
-        Dayflow["时间记录"]
-    end
-
-    subgraph Core["核心处理"]
-        Adapter["适配器层"]
-        Activity["Activity 统一模型"]
-        Vector["向量化 (Agno)"]
-    end
-
-    subgraph Storage["存储层"]
-        PG["PostgreSQL + pgvector"]
-    end
-
-    subgraph Output["输出层"]
-        Search["语义搜索"]
-        RAG["RAG 检索"]
-        Report["智能报告"]
-    end
-
-    Input --> Adapter
-    Adapter --> Activity
-    Activity --> Vector
-    Vector --> PG
-    PG --> Search
-    PG --> RAG
-    RAG --> Report
+```bash
+cd backend
+make dev
+make test
+make lint
 ```
 
-详细的架构设计请参考 [架构文档](docs/ARCHITECTURE.md)。
+### 前端
 
-## 核心概念
-
-### 统一活动模型 (Unified Activity Model)
-
-所有数据源的数据都被转换为统一的活动事件格式，存储在 `activity` 表中（字段设计如下）：
-
-| 字段名            | 类型        | 说明                     | 示例                                |
-|-------------------|------------|--------------------------|-------------------------------------|
-| `id`              | int        | 主键，自增               | -                                   |
-| `user_id`         | uuid       | 用户ID                   | -                                   |
-| `source_config_id`| int        | 数据源配置ID（可选）      | 12                                  |
-| `source_type`     | sourcetype | 数据源类型（枚举类型）    | "git", "dayflow", "siyuan"          |
-| `title`           | varchar    | 简短描述（必填）           | "fix: payment logic"                |
-| `content`         | varchar    | 详细内容/上下文（可为空）  | "Commit Diff, 笔记正文"             |
-| `extra_data`      | jsonb      | 源特有数据                | `{"repo": "backend", "branch": "main"}` |
-| `fingerprint`     | varchar    | 哈希指纹，用于防重复（必填）| "123acbxyz..."                      |
-| `created_at`      | timestamp  | 创建时间（必填）          | 2024-03-01 12:30:00                 |
-| `updated_at`      | timestamp  | 更新时间（必填）          | 2024-03-02 14:15:00                 |
-
-> 注释：
-> - `id` 主键自增，对应 `nextval('activity_id_seq'::regclass)`。
-> - `source_type` 为自定义枚举类型 `sourcetype`。
-> - `source_config_id` 可为空，用于标识绑定的数据源配置。
-> - `extra_data` 用于灵活扩展各源特有字段。
-> - `fingerprint` 建议唯一，用于去重。
-
-### 适配器模式 (Adapter Pattern)
-
-通过 `BaseConnector` 接口定义统一的数据源接入规范，每个数据源实现自己的适配器：
-
-- **Git Connector**: 从本地 Git 仓库读取提交记录（支持批量扫描）
-- **Dayflow Connector**: 解析时间记录数据（CSV/API）
-- **SiYuan Connector**: 从思源笔记获取笔记内容
-
-这种设计使得添加新数据源变得非常简单，只需实现 `BaseConnector` 接口即可。详见 [数据源接入指南](docs/DATA_SOURCE_GUIDE.md)。
-
-### RAG 与向量存储
-
-TraceWeaver 使用 **[Agno 框架](https://docs.agno.com)** 实现可扩展的文本向量化：
-
-- **统一接口**：支持 OpenAI、Ollama、HuggingFace 等多种 Embedder
-- **灵活切换**：开发环境用本地模型，生产环境用云端 API
-- **语义搜索**：基于 pgvector 的向量相似性搜索
-- **RAG 增强**：为 LLM 提供相关的个人数据上下文
+```bash
+cd frontend
+pnpm dev
+pnpm build
+```
 
 ## 项目结构
 
-```
+```text
 TraceWeaver/
-├── backend/                 # 后端服务
+├── backend/
 │   ├── app/
-│   │   ├── api/            # API 路由层
-│   │   ├── core/           # 核心配置
-│   │   ├── models/         # SQLModel 数据模型
-│   │   ├── schemas/        # Pydantic 模型 (DTOs)
-│   │   ├── services/       # 业务逻辑层
-│   │   └── connectors/     # 数据源适配器层
-│   ├── alembic/            # 数据库迁移
-│   └── tests/              # 测试代码
-├── frontend/                # 前端应用
+│   │   ├── api/            # API 路由
+│   │   ├── clients/        # 外部客户端封装
+│   │   ├── connectors/     # 数据源接入层
+│   │   ├── crud/           # 数据访问层
+│   │   ├── models/         # SQLModel 模型
+│   │   ├── schemas/        # Pydantic/SQLModel schema
+│   │   ├── services/       # 同步、向量化等服务
+│   │   └── workers/        # Celery 任务
+│   └── tests/
+├── frontend/
 │   ├── src/
-│   │   ├── components/     # React 组件
-│   │   ├── hooks/          # 自定义 Hooks
-│   │   ├── routes/         # 路由定义
-│   │   └── services/       # API 客户端
-│   └── tests/              # E2E 测试
-├── docs/                    # 项目文档
-│   ├── ARCHITECTURE.md     # 架构设计文档
-│   ├── DATA_SOURCE_GUIDE.md  # 数据源接入指南
-│   └── API_CONVENTIONS.md  # API 设计规范
-├── .cursor/rules/          # AI 开发规则
-│   ├── project-context.mdc # 项目引导
-│   ├── backend.mdc         # 后端开发规范
-│   ├── frontend.mdc        # 前端开发规范
-│   ├── database.mdc        # 数据库规范
-│   └── embedding.mdc       # 向量化规范
-├── docker-compose.yml       # Docker Compose 配置
-└── README.md               # 本文件
+│   │   ├── components/
+│   │   ├── routes/
+│   │   ├── hooks/
+│   │   └── client/         # 生成的 API client
+│   └── tests/
+├── docs/
+├── docker-compose.yml
+└── README.md
 ```
 
-## 核心业务流程
+## 当前系统边界
 
-### 1. 数据同步与向量化
+如果只按现在的仓库状态来描述，比较准确的数据流是：
 
-```
-数据源 → 适配器 → Activity 对象 → 数据库存储
-                ↓
-         文本分块 → Agno Embedder → 向量存储（pgvector）
-```
-
-1. 用户触发同步操作
-2. 适配器从外部系统抓取数据
-3. 转换为统一的 `Activity` 模型
-4. 指纹去重后存入数据库
-5. 异步进行文本向量化
-
-### 2. 语义搜索与 RAG
-
-```
-用户查询 → 向量化 → 相似性搜索 → Top-K 结果
-                                    ↓
-            LLM 生成 ← Prompt 构建 ← 上下文注入
+```text
+数据源配置 -> 连接器抓取数据 -> 统一 Activity -> 数据库存储 -> 文本切块 -> 向量化 -> pgvector
+                                                       \
+                                                        -> 图片分析相关配置与异步任务
 ```
 
-1. 用户输入查询或请求生成报告
-2. 查询文本通过 Embedder 向量化
-3. pgvector 执行向量相似性搜索
-4. 检索相关的 Top-K 片段
-5. 构建包含上下文的 Prompt
-6. 调用 LLM API 生成结果
+已经实现的是“采集、规范化、向量化、配置管理、分析任务”这层。
 
-### 3. 报告生成与编辑
+还没有实现的是“真正面向最终用户的知识库产品层”。
 
-1. LLM 基于 RAG 上下文生成 Markdown 报告
-2. 前端展示可编辑的 Markdown 编辑器
-3. 用户可以手动修正和优化内容
-4. 保存最终报告
+## TODO
 
-## 文档
+下面这些方向在仓库文档和架构里经常出现，但当前代码里还没有完整落地：
 
-### 核心文档
-- 📖 [架构设计文档](docs/ARCHITECTURE.md) - 详细的系统架构和设计说明（含 RAG 设计）
-- 🔌 [数据源接入指南](docs/DATA_SOURCE_GUIDE.md) - 如何添加新的数据源
-- 🌐 [API 设计规范](docs/API_CONVENTIONS.md) - RESTful API 约定和最佳实践
+- 面向普通用户的语义搜索页面和正式搜索 API
+- 基于个人数据的 RAG 问答 / AI 助手
+- 日报、周报等自动化报告生成
+- 报告保存、编辑和版本管理
+- 可视化时间线或活动流页面
+- 围绕 `Activity` 的用户可读浏览页
+- 非调试用途的检索结果展示与上下文拼装
+- 更完整的嵌入模型支持
+- 更通用的 Dayflow 接入方式，例如远程 API
 
-### 开发规范（Cursor Rules）
-- 📋 [项目引导](.cursor/rules/project-context.mdc) - 项目定位和核心理念
-- 🔧 [后端开发规范](.cursor/rules/backend.mdc) - ORM、类型注解、日志等规范
-- 🎨 [前端开发规范](.cursor/rules/frontend.mdc) - React、TypeScript、TanStack 等规范
-- 🗄️ [数据库规范](.cursor/rules/database.mdc) - Alembic 迁移和模型设计规范
-- 🧠 [向量化规范](.cursor/rules/embedding.mdc) - Agno 框架使用规范
+## 相关文档
 
-### 其他文档
-- 🚀 [开发指南](development.md) - 本地开发环境设置和开发流程
-- 🌍 [部署指南](deployment.md) - 生产环境部署说明
+- [development.md](development.md)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/DATA_SOURCE_GUIDE.md](docs/DATA_SOURCE_GUIDE.md)
+- [docs/API_CONVENTIONS.md](docs/API_CONVENTIONS.md)
 
-## 开发指南
+## 说明
 
-### 技术要求
-
-- **Python 3.12+** - 后端开发
-- **Node.js 18+** - 前端开发
-- **pnpm** - 前端包管理
-- **PostgreSQL 14+** - 数据库（需启用 pgvector 扩展）
-
-### 开发规范
-
-项目遵循以下关键规范：
-
-- ✅ **ORM 使用同步方式**（Session，非 AsyncSession）
-- ✅ **类型注解使用 `Optional[T]`** 而非 `T | None`
-- ✅ **Alembic 迁移手动生成**，AI 只做提醒
-- ✅ **使用 loguru 记录日志**
-- ✅ **复杂参数封装为 Pydantic Schema**
-- ✅ **前端使用 pnpm 安装包**
-
-详见 [Cursor Rules](.cursor/rules/) 目录下的各项规范。
-
-### 添加新的数据源
-
-1. 在 `backend/app/connectors/impl/` 创建新的连接器类
-2. 实现 `BaseConnector` 接口的两个方法：
-   - `validate_config()`: 验证配置有效性
-   - `fetch_activities()`: 抓取数据并转换为 `ActivityCreate` 对象
-3. 在 `connectors/registry.py` 中注册新连接器
-4. 添加前端配置表单组件
-
-详细步骤请参考 [数据源接入指南](docs/DATA_SOURCE_GUIDE.md)。
-
-### 运行测试
-
-```bash
-# 后端测试
-cd backend
-bash scripts/test.sh
-
-# 前端 E2E 测试
-cd frontend
-npx playwright test
-```
-
-### 代码格式化
-
-后端使用 `prek` 进行代码格式化和检查：
-
-```bash
-cd backend
-uv run prek run --all-files
-```
-
-前端使用 `biome` 进行代码格式化：
-
-```bash
-cd frontend
-pnpm run format
-```
-
-### 生成 Alembic 迁移脚本
-
-当修改数据库模型后，**手动**执行以下命令生成迁移脚本：
-
-```bash
-cd backend
-alembic revision --autogenerate -m "描述性的迁移说明"
-```
-
-⚠️ **重要**：生成后必须人工审核迁移脚本，确认无误后再执行：
-
-```bash
-alembic upgrade head
-```
-
-## 贡献指南
-
-欢迎贡献代码！请遵循以下步骤：
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 许可证
-
-本项目采用 [LICENSE](LICENSE) 许可证。
-
-## 相关链接
-
-### 后端框架
-- [FastAPI 文档](https://fastapi.tiangolo.com/)
-- [SQLModel 文档](https://sqlmodel.tiangolo.com/)
-- [Pydantic 文档](https://docs.pydantic.dev/)
-- [Agno 文档](https://docs.agno.com/)
-
-### 前端框架
-- [React 文档](https://react.dev/)
-- [TanStack Router](https://tanstack.com/router)
-- [TanStack Query](https://tanstack.com/query)
-- [shadcn/ui](https://ui.shadcn.com/)
-
-### 数据库
-- [PostgreSQL 文档](https://www.postgresql.org/docs/)
-- [pgvector 文档](https://github.com/pgvector/pgvector)
-
----
-
-**TraceWeaver** - 让工作痕迹自动编织成有价值的报告 ✨
+`docs/ARCHITECTURE.md` 和旧版 README 中有一些内容描述的是目标架构或未来形态，不完全等同于当前实现。判断当前功能是否真的可用时，请优先以 `backend/app`、`frontend/src/routes` 和实际 API 路由为准。

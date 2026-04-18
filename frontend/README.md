@@ -1,153 +1,199 @@
-# FastAPI Project - Frontend
+# TraceWeaver Frontend
 
-The frontend is built with [Vite](https://vitejs.dev/), [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/), [TanStack Query](https://tanstack.com/query), [TanStack Router](https://tanstack.com/router) and [Tailwind CSS](https://tailwindcss.com/).
+本文档描述当前前端应用的实际情况和开发方式。
 
-## Frontend development
+前端当前是一个偏后台管理性质的工作台，不是完整的终端用户知识库产品。
 
-Before you begin, ensure that you have either the Node Version Manager (nvm) or Fast Node Manager (fnm) installed on your system.
+## 当前前端职责
 
-* To install fnm follow the [official fnm guide](https://github.com/Schniz/fnm#installation). If you prefer nvm, you can install it using the [official nvm guide](https://github.com/nvm-sh/nvm#installing-and-updating).
+前端当前主要提供这些页面和操作：
 
-* After installing either nvm or fnm, proceed to the `frontend` directory:
+- 登录、注册、找回密码、重置密码
+- Dashboard
+- 数据源管理
+- LLM 模型配置管理
+- Prompt 模板管理
+- 图片分析结果查看
+- 用户设置
+- 管理员用户管理
+- 管理员 SQL 调试
+- 管理员向量检索调试
+
+当前前端还没有：
+
+- `Activity` 列表页
+- 时间线页
+- 报告页
+- AI 助手页
+- 面向普通用户的语义搜索页
+
+## 技术栈
+
+当前前端使用：
+
+- React
+- TypeScript
+- Vite
+- TanStack Router
+- TanStack Query
+- Tailwind CSS
+- shadcn/ui
+
+OpenAPI client 通过 `@hey-api/openapi-ts` 生成。
+
+## 开发环境
+
+### 安装依赖
 
 ```bash
 cd frontend
+pnpm install
 ```
-* If the Node.js version specified in the `.nvmrc` file isn't installed on your system, you can install it using the appropriate command:
+
+### 启动开发服务器
 
 ```bash
-# If using fnm
-fnm install
-
-# If using nvm
-nvm install
+pnpm dev
 ```
 
-* Once the installation is complete, switch to the installed version:
+### 构建
 
 ```bash
-# If using fnm
-fnm use
-
-# If using nvm
-nvm use
+pnpm build
 ```
 
-* Within the `frontend` directory, install the necessary NPM packages:
+### 代码检查
 
 ```bash
-npm install
+pnpm lint
 ```
 
-* And start the live server with the following `npm` script:
+## 当前路由
+
+当前前端实际存在的主要路由包括：
+
+- `/login`
+- `/signup`
+- `/recover-password`
+- `/reset-password`
+- `/`
+- `/settings`
+- `/datasources`
+- `/llm-models`
+- `/llm-prompts`
+- `/llm-prompts/$id`
+- `/image-analyses`
+- `/admin`
+- `/debug-siyuan-sql`
+- `/debug-vector-search`
+
+可以直接把它理解成两类页面：
+
+- 面向普通登录用户的后台页面
+- 面向管理员的调试和管理页面
+
+## 当前页面结构
+
+### Dashboard
+
+首页当前主要展示的是 `Dayflow` 同步卡片，而不是个人知识库总览。
+
+### Data Sources
+
+这是目前最重要的业务页面之一，支持：
+
+- 新增数据源
+- 编辑数据源
+- 删除数据源
+- 测试连接
+- 触发同步
+
+### LLM Models / LLM Prompts
+
+这两页主要服务于图片分析链路。
+
+### Image Analyses
+
+当前用于查看已完成的图片分析记录和详情。
+
+### Debug 页面
+
+管理员可用：
+
+- `Debug SQL`
+- `Debug Vector`
+
+这两个页面用于验证底层链路，不应被视为正式产品能力。
+
+## OpenAPI Client
+
+当前前端使用生成的 client，代码位于：
+
+```text
+frontend/src/client
+```
+
+重新生成 client：
 
 ```bash
-npm run dev
+pnpm generate-client
 ```
 
-* Then open your browser at http://localhost:5173/.
+一般需要在后端 OpenAPI 变更后执行。
 
-Notice that this live server is not running inside Docker, it's for local development, and that is the recommended workflow. Once you are happy with your frontend, you can build the frontend Docker image and start it, to test it in a production-like environment. But building the image at every change will not be as productive as running the local development server with live reload.
+## 目录结构
 
-Check the file `package.json` to see other available options.
-
-### Removing the frontend
-
-If you are developing an API-only app and want to remove the frontend, you can do it easily:
-
-* Remove the `./frontend` directory.
-
-* In the `docker-compose.yml` file, remove the whole service / section `frontend`.
-
-* In the `docker-compose.override.yml` file, remove the whole service / section `frontend` and `playwright`.
-
-Done, you have a frontend-less (api-only) app. 🤓
-
----
-
-If you want, you can also remove the `FRONTEND` environment variables from:
-
-* `.env`
-* `./scripts/*.sh`
-
-But it would be only to clean them up, leaving them won't really have any effect either way.
-
-## Generate Client
-
-### Automatically
-
-* Activate the backend virtual environment.
-* From the top level project directory, run the script:
-
-```bash
-./scripts/generate-client.sh
+```text
+frontend/
+├── src/
+│   ├── client/         # 生成的 API client
+│   ├── components/     # 业务组件和 UI 组件
+│   ├── hooks/          # 自定义 hooks
+│   ├── routes/         # 路由页面
+│   └── main.tsx
+├── tests/              # Playwright 测试
+├── package.json
+└── vite.config.ts
 ```
 
-* Commit the changes.
+## 测试
 
-### Manually
+当前前端包含 Playwright 测试。
 
-* Start the Docker Compose stack.
-
-* Download the OpenAPI JSON file from `http://localhost/api/v1/openapi.json` and copy it to a new file `openapi.json` at the root of the `frontend` directory.
-
-* To generate the frontend client, run:
-
-```bash
-npm run generate-client
-```
-
-* Commit the changes.
-
-Notice that everytime the backend changes (changing the OpenAPI schema), you should follow these steps again to update the frontend client.
-
-## Using a Remote API
-
-If you want to use a remote API, you can set the environment variable `VITE_API_URL` to the URL of the remote API. For example, you can set it in the `frontend/.env` file:
-
-```env
-VITE_API_URL=https://api.my-domain.example.com
-```
-
-Then, when you run the frontend, it will use that URL as the base URL for the API.
-
-## Code Structure
-
-The frontend code is structured as follows:
-
-* `frontend/src` - The main frontend code.
-* `frontend/src/assets` - Static assets.
-* `frontend/src/client` - The generated OpenAPI client.
-* `frontend/src/components` -  The different components of the frontend.
-* `frontend/src/hooks` - Custom hooks.
-* `frontend/src/routes` - The different routes of the frontend which include the pages.
-
-## End-to-End Testing with Playwright
-
-The frontend includes initial end-to-end tests using Playwright. To run the tests, you need to have the Docker Compose stack running. Start the stack with the following command:
-
-```bash
-docker compose up -d --wait backend
-```
-
-Then, you can run the tests with the following command:
+如果需要运行：
 
 ```bash
 npx playwright test
 ```
 
-You can also run your tests in UI mode to see the browser and interact with it running:
+具体运行方式仍以仓库根目录的开发环境和依赖状态为准。
 
-```bash
-npx playwright test --ui
-```
+## 当前边界
 
-To stop and remove the Docker Compose stack and clean the data created in tests, use the following command:
+如果你要继续开发前端，需要先明确当前产品边界：
 
-```bash
-docker compose down -v
-```
+### 已有
 
-To update the tests, navigate to the tests directory and modify the existing test files or add new ones as needed.
+- 后台式配置与管理页面
+- 图片分析结果查看
+- 管理员调试页面
 
-For more information on writing and running Playwright tests, refer to the official [Playwright documentation](https://playwright.dev/docs/intro).
+### 没有
+
+- 知识库首页
+- 活动浏览
+- 正式搜索体验
+- RAG 聊天
+- 报告生成与编辑
+
+后续如果要做用户产品层，优先应该补的是：
+
+1. `Activity` 浏览页
+2. 正式搜索页
+3. 报告页或 AI 助手页
+
+## 相关文档
+
+- [../README.md](../README.md)
+- [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
+- [../docs/API_CONVENTIONS.md](../docs/API_CONVENTIONS.md)

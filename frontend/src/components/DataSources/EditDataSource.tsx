@@ -10,6 +10,11 @@ import {
   type SourceConfigUpdate,
   SourceConfigsService,
 } from "@/client"
+
+/** Backend returns config_payload but generated type may omit it for security. */
+type SourceConfigWithPayload = SourceConfigPublic & {
+  config_payload?: Record<string, unknown> | null
+}
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,7 +56,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 
 interface EditDataSourceProps {
-  dataSource: SourceConfigPublic
+  dataSource: SourceConfigWithPayload
   onSuccess: () => void
 }
 
@@ -60,24 +65,27 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
-  // Extract config values based on type
-  const getDefaultValues = () => {
+  const str = (v: unknown) => (typeof v === "string" ? v : "")
+
+  const getDefaultValues = (): FormData => {
     const base = { name: dataSource.name }
+    const cp = dataSource.config_payload
     if (dataSource.type === "GIT") {
       return {
         ...base,
-        repo_path: dataSource.config_payload?.repo_path || "",
-        branch: dataSource.config_payload?.branch || "main",
+        repo_path: str(cp?.repo_path),
+        branch: str(cp?.branch) || "main",
         db_path: "",
         api_url: "",
         api_token: "",
       }
-    } else if (dataSource.type === "DAYFLOW") {
+    }
+    if (dataSource.type === "DAYFLOW") {
       return {
         ...base,
         repo_path: "",
         branch: "",
-        db_path: dataSource.config_payload?.db_path || "",
+        db_path: str(cp?.db_path),
         api_url: "",
         api_token: "",
       }
@@ -87,8 +95,8 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
       repo_path: "",
       branch: "",
       db_path: "",
-      api_url: dataSource.config_payload?.api_url || "",
-      api_token: dataSource.config_payload?.api_token || "",
+      api_url: str(cp?.api_url),
+      api_token: str(cp?.api_token),
     }
   }
 
@@ -110,7 +118,7 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
       setIsOpen(false)
       onSuccess()
     },
-    onError: (error) => handleError.call(showErrorToast, error as any),
+    onError: (error) => handleError.call(showErrorToast, error),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["source-configs"] })
     },
@@ -159,7 +167,7 @@ const EditDataSource = ({ dataSource, onSuccess }: EditDataSourceProps) => {
     onSuccess: (data) => {
       showSuccessToast(data.message || "连接测试成功")
     },
-    onError: (error) => handleError.call(showErrorToast, error as any),
+    onError: (error) => handleError.call(showErrorToast, error),
   })
 
   const onSubmit = (data: FormData) => {

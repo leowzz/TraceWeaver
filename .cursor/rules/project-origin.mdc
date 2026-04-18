@@ -2,25 +2,8 @@
 alwaysApply: true
 ---
 
-这个项目使用的是 Full Stack FastAPI Template
+# 项目来源
 
-Technology Stack and Features
-⚡ FastAPI for the Python backend API.
-🧰 SQLModel for the Python SQL database interactions (ORM).
-🔍 Pydantic, used by FastAPI, for the data validation and settings management.
-💾 PostgreSQL as the SQL database.
-🚀 React for the frontend.
-💃 Using TypeScript, hooks, Vite, and other parts of a modern frontend stack.
-🎨 Tailwind CSS and shadcn/ui for the frontend components.
-🤖 An automatically generated frontend client.
-🧪 Playwright for End-to-End testing.
-🦇 Dark mode support.
-🐋 Docker Compose for development and production.
-🔒 Secure password hashing by default.
-🔑 JWT (JSON Web Token) authentication.
-📫 Email based password recovery.
-📬 Mailcatcher for local email testing during development.
-✅ Tests with Pytest.
-📞 Traefik as a reverse proxy / load balancer.
-🚢 Deployment instructions using Docker Compose, including how to set up a frontend Traefik proxy to handle automatic HTTPS certificates.
-🏭 CI (continuous integration) and CD (continuous deployment) based on GitHub Actions.
+基于 **Full Stack FastAPI Template** 构建。
+
+Technology Stack: FastAPI + SQLModel + PostgreSQL + React + TypeScript + TanStack Router/Query + shadcn/ui + Tailwind + Docker Compose

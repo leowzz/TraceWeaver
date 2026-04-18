@@ -2,255 +2,92 @@
 alwaysApply: true
 ---
 
-# TraceWeaver 项目引导文档
+# TraceWeaver 项目概览
 
-## 项目定位
+## 定位
 
-TraceWeaver 是一个**个人数据管理和知识库构建平台**，旨在：
-
-1. **统一数据源**：将碎片化的个人数据（代码提交、笔记、时间记录）汇聚到一个统一的知识库
-2. **构建知识图谱**：通过向量化和 RAG 技术，使数据可被语义搜索和智能问答
-3. **自动化总结**：利用 LLM 自动生成工作日报、周报等结构化报告
-4. **数据即资产**：将日常工作痕迹转化为可检索、可分析的个人知识资产
+个人数据管理和知识库构建平台，将碎片化数据（代码提交、笔记、时间记录）汇聚成统一知识库，通过向量化和 RAG 技术实现语义搜索和智能问答。
 
 ## 核心理念
 
 ### Trace as a Stream（痕迹即流）
-
-无论数据来自何处，都统一转换为标准化的"活动事件"（Activity Event）：
-
+所有数据源统一转换为标准化的 `Activity` 事件：
 ```
 Git 提交 → Activity
 思源笔记 → Activity
 时间记录 → Activity
 ```
 
-这种统一抽象确保：
-- 核心业务逻辑与数据源解耦
-- 添加新数据源只需实现适配器接口
-- 所有数据可统一查询、分析和向量化
-
 ### Knowledge as Context（知识即上下文）
-
-通过 RAG（检索增强生成）技术：
-
 ```
-数据 → 向量化 → pgvector 存储 → 语义搜索 → LLM 上下文 → 智能输出
+数据 → 向量化 → pgvector → 语义搜索 → LLM 上下文 → 智能输出
 ```
-
-这使得：
-- 可以根据意图而非关键词搜索历史记录
-- LLM 基于个人数据生成更准确的报告
-- 构建真正的"个人 AI 助手"
 
 ## 系统架构
 
-```mermaid
-graph LR
-    subgraph Input["数据源"]
-        Git["Git 仓库"]
-        SiYuan["思源笔记"]
-        Dayflow["时间记录"]
-    end
-
-    subgraph Core["核心处理"]
-        Adapter["适配器层"]
-        Activity["Activity 统一模型"]
-        Vector["向量化 (Agno)"]
-    end
-
-    subgraph Storage["存储层"]
-        PG["PostgreSQL + pgvector"]
-    end
-
-    subgraph Output["输出层"]
-        Search["语义搜索"]
-        RAG["RAG 检索"]
-        Report["智能报告"]
-    end
-
-    Input --> Adapter
-    Adapter --> Activity
-    Activity --> Vector
-    Vector --> PG
-    PG --> Search
-    PG --> RAG
-    RAG --> Report
+```
+数据源（Git/SiYuan/Dayflow）
+  ↓
+适配器层（Connector）
+  ↓
+Activity 统一模型
+  ↓
+向量化（Agno Embedder）
+  ↓
+PostgreSQL + pgvector
+  ↓
+RAG 检索 → LLM 报告生成
 ```
 
-## 技术栈概览
+## 技术栈
 
-### 后端
-
-- **FastAPI** - 高性能 Web 框架
-- **SQLModel** - 类型安全的 ORM（同步模式）
-- **PostgreSQL + pgvector** - 统一的数据和向量存储
-- **Agno** - 可扩展的 Embedder 抽象框架
-- **Loguru** - 日志记录
-- **Celery** - 异步任务队列
-
-### 前端
-
-- **React + TypeScript** - UI 框架
-- **TanStack Router** - 类型安全路由
-- **TanStack Query** - 数据获取和状态管理
-- **shadcn/ui + Tailwind CSS** - 现代化组件库
-
-### 基础设施
-
-- **Docker Compose** - 本地开发和部署
-- **Alembic** - 数据库迁移（手动生成和审核）
-- **Pytest** - 单元测试和集成测试
+**后端：** FastAPI + SQLModel + PostgreSQL + pgvector + Agno + Loguru + Celery  
+**前端：** React + TypeScript + TanStack Router/Query + shadcn/ui + Tailwind  
+**基础设施：** Docker Compose + Alembic + Pytest
 
 ## 核心数据模型
 
-### Activity（活动）
-
-所有数据源的统一表示：
-
 ```python
+# Activity - 所有数据源的统一表示
 class Activity(SQLModel, table=True):
-    id: int
-    user_id: UUID
-    source_type: SourceType  # git/siyuan/dayflow
-    source_id: str
-    occurred_at: datetime
-    title: str
-    content: Optional[str]
+    id, user_id, source_type, source_id, occurred_at, title, content
     extra_data: dict  # JSONB，存储源特有数据
     fingerprint: str  # 去重哈希
-```
 
-### ActivityEmbedding（活动向量）
-
-用于语义搜索和 RAG：
-
-```python
+# ActivityEmbedding - 用于语义搜索
 class ActivityEmbedding(SQLModel, table=True):
-    id: int
-    activity_id: int
-    user_id: str
-    embedding: List[float]  # pgvector
-    chunk_text: str
-    chunk_index: int
-    embedder_model: str
-    embedder_provider: str
-```
+    activity_id, user_id, embedding, chunk_text, embedder_model
 
-### SourceConfig（数据源配置）
-
-用户的数据源连接配置：
-
-```python
+# SourceConfig - 数据源连接配置
 class SourceConfig(SQLModel, table=True):
-    id: int
-    user_id: UUID
-    type: SourceType
-    name: str
-    config_payload: dict  # JSONB，存储连接参数
-    is_active: bool
-```
-
-## 核心业务流程
-
-### 1. 数据同步流程
-
-```
-用户触发同步
-  ↓
-遍历用户的 SourceConfig
-  ↓
-通过 Registry 获取对应 Connector
-  ↓
-Connector 从外部系统抓取数据
-  ↓
-转换为 Activity 对象
-  ↓
-去重（fingerprint）后存入数据库
-  ↓
-触发向量化（异步）
-```
-
-### 2. 向量化流程
-
-```
-Activity 数据
-  ↓
-文本分块（chunk）
-  ↓
-Agno Embedder 向量化
-  ↓
-存入 ActivityEmbedding 表
-  ↓
-pgvector 索引更新
-```
-
-### 3. RAG 查询流程
-
-```
-用户提问/生成报告
-  ↓
-查询文本向量化
-  ↓
-pgvector 相似性搜索
-  ↓
-Top-K 相关片段
-  ↓
-构建 Prompt（注入上下文）
-  ↓
-调用 LLM API
-  ↓
-返回生成结果
+    user_id, type, name, config_payload, is_active
 ```
 
 ## 设计原则
 
-### 1. 六边形架构（Hexagonal Architecture）
+1. **六边形架构**：核心业务层定义接口，适配器层实现外部系统
+2. **无实体外键**：使用虚拟外键提高灵活性
+3. **JSONB 存储元数据**：适配不同数据源
+4. **Embedder 可切换**：通过 Agno 支持多种模型
+5. **Connector 可插拔**：实现 BaseConnector 接口即可添加新数据源
 
-- **核心业务层**：定义接口和业务逻辑
-- **适配器层**：实现外部系统的接口
-- **解耦原则**：核心不依赖具体的外部实现
+## 核心业务流程
 
-### 2. 数据库设计原则
+### 数据同步
+用户触发 → 遍历 SourceConfig → Connector 抓取 → 转换为 Activity → 去重存储 → 异步向量化
 
-- **无实体外键约束**：使用虚拟外键，提高灵活性
-- **JSONB 存储元数据**：适配不同数据源的特有字段
-- **同步 ORM**：使用 SQLModel 的同步 Session
+### 向量化
+Activity → 文本分块 → Agno Embedder → ActivityEmbedding → pgvector 索引
 
-### 3. 可扩展性原则
+### RAG 查询
+用户提问 → 查询向量化 → pgvector 相似性搜索 → Top-K 片段 → LLM Prompt → 生成报告
 
-- **Embedder 可切换**：通过 Agno 框架支持多种模型
-- **Connector 可插拔**：实现 BaseConnector 接口即可添加新数据源
-- **配置驱动**：通过 Pydantic Schema 管理配置
+## 当前支持的数据源
 
-## 数据源
+1. Git 仓库（手动配置 + 批量扫描）
+2. 思源笔记（API 同步）
+3. Dayflow 时间记录
 
-当前支持的数据源：
+## 项目来源
 
-1. **Git 仓库**
-   - 手动配置：用户逐个添加仓库路径
-   - 批量扫描：自动发现指定目录下的所有 Git 仓库
-
-2. **思源笔记（SiYuan）**
-   - 通过 API 同步文档和块
-   - 支持导出完整 Markdown 内容
-
-3. **Dayflow 时间记录**
-   - 同步时间追踪数据
-   - 记录工作时长和项目标签
-
-## 未来规划
-
-- 支持更多数据源（Jira、GitHub Issues、飞书等）
-- 实现个人 AI 助手（基于 RAG 的对话机器人）
-- 多模态支持（图片、音频等）
-- 知识图谱可视化
-
-## 开发时请记住
-
-- ORM 操作使用同步方式（Session，非 AsyncSession）
-- 修改 Model 后，提醒用户手动执行 Alembic 生成迁移脚本
-- 类型注解使用 `Optional[T]`，而非 `T | None`
-- 日志使用 loguru
-- 复杂参数封装为 Pydantic Schema
-- 向量化使用 Agno 框架的 Embedder 抽象
+基于 **Full Stack FastAPI Template** 构建。

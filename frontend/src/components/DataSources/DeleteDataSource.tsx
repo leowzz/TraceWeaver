@@ -38,7 +38,7 @@ const DeleteDataSource = ({ dataSource, onSuccess }: DeleteDataSourceProps) => {
       setIsOpen(false)
       onSuccess()
     },
-    onError: (error) => handleError(error, showErrorToast),
+    onError: (error) => handleError.call(showErrorToast, error),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["source-configs"] })
     },

@@ -90,14 +90,6 @@ function DebugVectorSearch() {
     }
   }
 
-  const getSimilarityColor = (similarity: number) => {
-    if (similarity >= 0.9) return "bg-green-500"
-    if (similarity >= 0.8) return "bg-green-400"
-    if (similarity >= 0.7) return "bg-yellow-500"
-    if (similarity >= 0.6) return "bg-orange-500"
-    return "bg-red-500"
-  }
-
   // Check if user is admin (after all hooks)
   if (!user?.is_superuser) {
     return (
